@@ -3,8 +3,9 @@
 #include <atomic>
 #include <mutex>
 #include <vector>
-#include <vector>
 #include <thread>
+#include <fstream>
+#include <iostream>
 
 #include <SystemState.hpp>
 
@@ -63,4 +64,6 @@ private:
 
     std::mutex frameLock;
     std::vector<CameraFrame> frameBuffer;
+
+    std::ofstream ballWriter;
 };

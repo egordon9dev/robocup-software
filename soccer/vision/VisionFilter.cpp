@@ -9,7 +9,8 @@
 
 VisionFilter::VisionFilter() {
     threadEnd.store(false, std::memory_order::memory_order_seq_cst);
-    
+    ballWriter.open("test.csv");
+
     // Have to be careful so the entire initialization list
     // is created before the thread starts
     worker = std::thread(&VisionFilter::workerThread, this);
@@ -21,6 +22,8 @@ VisionFilter::~VisionFilter() {
 
     // Wait for it to die
     worker.join();
+
+    ballWriter.close();
 }
 
 void VisionFilter::addFrames(const std::vector<CameraFrame>& frames) {
@@ -37,6 +40,9 @@ void VisionFilter::fillBallState(SystemState* state) {
         state->ball.pos = wb.getPos();
         state->ball.vel = wb.getVel();
         state->ball.time = wb.getTime();
+        ballWriter << wb.getPos().x() << "," << wb.getPos().x() << ","
+                   << wb.getVel().x() << "," << wb.getVel().y() << ","
+                   << RJ::timestamp(RJ::now()) << std::endl;
     } else {
         state->ball.valid = false;
     }

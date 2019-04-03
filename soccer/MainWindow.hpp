@@ -184,6 +184,9 @@ private Q_SLOTS:
     void on_fastIndirectBlue_clicked();
     void on_fastIndirectYellow_clicked();
 
+    //RL Buttons
+    void on_rlResetRobots_clicked();
+
 Q_SIGNALS:
     // signal used to let widgets that we're viewing a different log frame now
     int historyLocationChanged(int value);
@@ -203,7 +206,7 @@ private:
     const QStandardItemModel* goalieModel;
 
     Processor* const _processor;
-    Configuration* _config;
+    Configuration* _config; 
 
     // Log history, copied from Logger.
     // This is used by other controls to get log data without having to copy it
@@ -243,7 +246,7 @@ private:
     QLabel* _procFPS;
     QLabel* _logMemory;
 
-    // QActionGroups for Radio Menu Actions
+
     std::map<std::string, QActionGroup*> qActionGroups{};
 
     // maps robot shell IDs to items in the list

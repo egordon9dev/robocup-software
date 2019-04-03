@@ -196,6 +196,8 @@ public:
 
     bool isInitialized() const;
 
+    bool ballOutOfBounds();
+
     ////////
 
     // Time of the first LogFrame
@@ -302,4 +304,5 @@ private:
     VisionChannel _visionChannel;
 
     bool _initialized;
+
 };

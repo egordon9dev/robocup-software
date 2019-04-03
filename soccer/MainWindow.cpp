@@ -300,6 +300,15 @@ void MainWindow::updateFromRefPacket(bool haveExternalReferee) {
 }
 
 void MainWindow::updateViews() {
+    //Process RL termination conditions, etc if RL mode enabled
+    if (_ui.enable_RL->checkState()){
+        if (_processor->ballOutOfBounds()){
+            _ui.LastEvent->setText(QString("Out of Bounds"));
+        }else{
+            _ui.LastEvent->clear();
+        }
+    }
+
     int manual = _processor->manualID();
     if ((manual >= 0 || _ui.manualID->isEnabled()) &&
         !_processor->joystickValid()) {
@@ -547,6 +556,7 @@ void MainWindow::updateViews() {
 
     _ui.actionUse_External_Referee->setChecked(
         _processor->refereeModule()->useExternalReferee());
+
 
     // update robot status list
     for (const OurRobot* robot : _processor->state()->self) {
@@ -1065,7 +1075,7 @@ void MainWindow::on_actionResetField_triggered() {
     for (int i = 0; i < Robots_Per_Team; ++i) {
         auto rob = replacement->add_robots();
 
-        const int NUM_COLS = 2;
+        const int NUM_COLS = 3;
         const int ROBOTS_PER_COL = Robots_Per_Team / NUM_COLS;
 
         double x_pos = -2.5 + i / ROBOTS_PER_COL;
@@ -1081,7 +1091,7 @@ void MainWindow::on_actionResetField_triggered() {
     for (int i = 0; i < Robots_Per_Team; ++i) {
         auto rob = replacement->add_robots();
 
-        const int NUM_COLS = 2;
+        const int NUM_COLS = 3;
         const int ROBOTS_PER_COL = Robots_Per_Team / NUM_COLS;
 
         double x_pos = +2.5 - i / ROBOTS_PER_COL;
@@ -1539,6 +1549,10 @@ void MainWindow::on_actionVisionSecondary_Half_triggered() {
 void MainWindow::on_actionVisionFull_Field_triggered() {
     _processor->changeVisionChannel(SharedVisionPortDoubleNew);
     _processor->setFieldDimensions(Field_Dimensions::Double_Field_Dimensions);
+}
+
+void MainWindow::on_rlResetRobots_clicked(){
+    on_actionResetField_triggered();
 }
 
 bool MainWindow::live() { return !_playbackRate; }

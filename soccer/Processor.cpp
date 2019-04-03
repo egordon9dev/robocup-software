@@ -1,3 +1,4 @@
+#include <cmath>
 #include <gameplay/GameplayModule.hpp>
 
 #include <poll.h>
@@ -433,6 +434,9 @@ void Processor::run() {
             yellowname = _state.gameState.OurInfo.name;
             bluename = _state.gameState.TheirInfo.name;
         }
+
+        //check for RL terminating conditions
+
 
         _state.logFrame->set_team_name_blue(bluename);
         _state.logFrame->set_team_name_yellow(yellowname);
@@ -920,3 +924,13 @@ void Processor::setFieldDimensions(const Field_Dimensions& dims) {
 
 bool Processor::isRadioOpen() const { return _radio->isOpen(); }
 bool Processor::isInitialized() const { return _initialized; }
+
+bool Processor::ballOutOfBounds(){
+    if (abs(_state.ball.pos.x()) > Field_Dimensions::Current_Dimensions.Width() /2 ||
+        _state.ball.pos.y() > Field_Dimensions::Current_Dimensions.Length() ||
+        _state.ball.pos.y() < 0 ){
+        return true;
+    } else {
+        return false;
+    }
+}

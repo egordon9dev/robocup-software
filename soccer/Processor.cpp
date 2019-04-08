@@ -925,10 +925,14 @@ void Processor::setFieldDimensions(const Field_Dimensions& dims) {
 bool Processor::isRadioOpen() const { return _radio->isOpen(); }
 bool Processor::isInitialized() const { return _initialized; }
 
+/*
+  This function detects when the ball has completely left the field of play
+  It is used primarily in the RL/RO module
+*/
 bool Processor::ballOutOfBounds(){
-    if (abs(_state.ball.pos.x()) > Field_Dimensions::Current_Dimensions.Width() /2 ||
-        _state.ball.pos.y() > Field_Dimensions::Current_Dimensions.Length() ||
-        _state.ball.pos.y() < 0 ){
+    if (abs(_state.ball.pos.x()) > Field_Dimensions::Current_Dimensions.Width()/2 + Ball_Radius ||
+        _state.ball.pos.y() > Field_Dimensions::Current_Dimensions.Length() + Ball_Radius ||
+        _state.ball.pos.y() < -1*Ball_Radius ){
         return true;
     } else {
         return false;

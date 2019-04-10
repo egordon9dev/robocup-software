@@ -80,6 +80,28 @@ struct Field_Dimensions {
       return tmp;
     };
 
+    /*
+    * Provides a rect that is the inside of our goal
+    * 'padding' is the amount that this rect is smaller than the actual goal
+    * this is used for detecting when a goal has been scored in the RL module
+    */
+    Geometry2d::Rect ourGoalAreaPadded(float padding){
+      Geometry2d::Rect tmp = Geometry2d::Rect(Geometry2d::Point(_GoalWidth/2,0), Geometry2d::Point(-_GoalWidth/2,-_GoalDepth));
+      tmp.pad(-padding);
+      return tmp;
+    }
+
+    /*
+    * Provides a rect that is the inside of their goal
+    * 'padding' is the amount that this rect is smaller than the actual goal
+    * this is used for detecting when a goal has been scored in the RL module
+    */
+    Geometry2d::Rect theirGoalAreaPadded(float padding){
+      Geometry2d::Rect tmp = Geometry2d::Rect(Geometry2d::Point(_GoalWidth/2,_Length), Geometry2d::Point(-_GoalWidth/2,_Length+_GoalDepth));
+      tmp.pad(-padding);
+      return tmp;
+    }
+
     std::vector<Geometry2d::Line> FieldBorders() const { return _FieldBorders; }
 
     static const Field_Dimensions Single_Field_Dimensions;

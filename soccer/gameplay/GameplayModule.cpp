@@ -441,6 +441,10 @@ void Gameplay::GameplayModule::run() {
     _our_score_last_frame = _state->gameState.ourScore;
 }
 
+//grSim_Packet Gameplay::GameplayModeule::getRandomStartPosition() const{
+
+//}
+
 #pragma mark python
 
 boost::python::object Gameplay::GameplayModule::getRootPlay() {

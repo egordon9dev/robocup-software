@@ -15,6 +15,9 @@
 #include <QMutex>
 #include <QString>
 
+#include <protobuf/grSim_Packet.pb.h>
+#include <protobuf/grSim_Replacement.pb.h>
+
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <Configuration.hpp>
 
@@ -45,7 +48,7 @@ public:
     GameplayModule(SystemState* state);
     virtual ~GameplayModule();
 
-    SystemState* state() const { return _state; }
+    SystemState* state() const {return _state;}
 
     virtual void run();
 
@@ -120,6 +123,8 @@ public:
     /// Resends the current field dimensions to python. This should be called
     /// whenever the current field dimensions change
     void updateFieldDimensions();
+
+    //grSim_Packet getRandomStartPosition() const;
 
 protected:
     boost::python::object getRootPlay();

@@ -302,10 +302,14 @@ void MainWindow::updateFromRefPacket(bool haveExternalReferee) {
 void MainWindow::updateViews() {
     //Process RL termination conditions, etc if RL mode enabled
     if (_ui.enable_RL->checkState()){
-        if (_processor->ballOutOfBounds()){
+        if (_processor->ourGoalScored()){
+            _ui.LastEvent->setText(QString("We scored!"));
+        }else if (_processor->theirGoalScored()){
+            _ui.LastEvent->setText(QString("They scored :("));
+        }else if (_processor->ballOutOfBounds()){
             _ui.LastEvent->setText(QString("Out of Bounds"));
         }else{
-            _ui.LastEvent->clear();
+            _ui.LastEvent->setText(QString("Ball in Play."));
         }
     }
 
@@ -1075,7 +1079,7 @@ void MainWindow::on_actionResetField_triggered() {
     for (int i = 0; i < Robots_Per_Team; ++i) {
         auto rob = replacement->add_robots();
 
-        const int NUM_COLS = 3;
+        const int NUM_COLS = 2;
         const int ROBOTS_PER_COL = Robots_Per_Team / NUM_COLS;
 
         double x_pos = -2.5 + i / ROBOTS_PER_COL;
@@ -1091,7 +1095,7 @@ void MainWindow::on_actionResetField_triggered() {
     for (int i = 0; i < Robots_Per_Team; ++i) {
         auto rob = replacement->add_robots();
 
-        const int NUM_COLS = 3;
+        const int NUM_COLS = 2;
         const int ROBOTS_PER_COL = Robots_Per_Team / NUM_COLS;
 
         double x_pos = +2.5 - i / ROBOTS_PER_COL;

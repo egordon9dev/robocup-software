@@ -929,10 +929,28 @@ bool Processor::isInitialized() const { return _initialized; }
   This function detects when the ball has completely left the field of play
   It is used primarily in the RL/RO module
 */
-bool Processor::ballOutOfBounds(){
+bool Processor::ballOutOfBounds() const{
     if (abs(_state.ball.pos.x()) > Field_Dimensions::Current_Dimensions.Width()/2 + Ball_Radius ||
         _state.ball.pos.y() > Field_Dimensions::Current_Dimensions.Length() + Ball_Radius ||
         _state.ball.pos.y() < -1*Ball_Radius ){
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool Processor::ourGoalScored() const{
+    Geometry2d::Rect theirGoalArea = Field_Dimensions::Current_Dimensions.theirGoalAreaPadded(Ball_Radius);
+    if (theirGoalArea.containsPoint(_state.ball.pos) ){
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool Processor::theirGoalScored() const{
+    Geometry2d::Rect theirGoalArea = Field_Dimensions::Current_Dimensions.ourGoalAreaPadded(Ball_Radius);
+    if (theirGoalArea.containsPoint(_state.ball.pos) ){
         return true;
     } else {
         return false;

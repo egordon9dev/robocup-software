@@ -13,6 +13,8 @@
 
 #include <protobuf/LogFrame.pb.h>
 #include <Geometry2d/TransformMatrix.hpp>
+#include <Geometry2d/Rect.hpp>
+#include <Geometry2d/Point.hpp>
 #include <Logger.hpp>
 #include <NewRefereeModule.hpp>
 #include <SystemState.hpp>
@@ -196,7 +198,9 @@ public:
 
     bool isInitialized() const;
 
-    bool ballOutOfBounds();
+    bool ballOutOfBounds() const;
+    bool ourGoalScored() const;
+    bool theirGoalScored() const;
 
     ////////
 

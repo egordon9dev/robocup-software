@@ -1,6 +1,8 @@
 import play_registry as play_registry_module
+import logger_registry as logger_registry_module
 import playbook
 import play
+import customLogger
 import fs_watcher
 import class_import
 import logging
@@ -14,6 +16,7 @@ import constants
 ## soccer is run from the `run` folder, so we have to make sure we use the right path to the gameplay directory
 GAMEPLAY_DIR = os.path.dirname(os.path.realpath(__file__))
 PLAYBOOKS_DIR = GAMEPLAY_DIR + '/playbooks'
+LOGGERS_DIR = GAMEPLAY_DIR + '/loggers'
 
 # main init method for the python side of things
 _has_initialized = False
@@ -39,6 +42,11 @@ def init(log_errors=True):
     global _play_registry
     _play_registry = play_registry_module.PlayRegistry()
 
+    #init logger registry
+    global _logger_registry
+    _logger_registry = logger_registry_module.LoggerRegistry()
+
+
     # load all plays
     play_classes = class_import.recursive_import_classes(GAMEPLAY_DIR,
                                                          ['plays'], play.Play)
@@ -46,6 +54,13 @@ def init(log_errors=True):
         # keep in mind that @entry is a tuple
         mod_path = entry[0][1:]
         _play_registry.insert(mod_path, entry[1])
+
+    logger_classes = class_import.recursive_import_classes(GAMEPLAY_DIR,
+                                                         ['loggers'], customLogger.CustomLogger)
+    for entry in logger_classes:
+        # keep in mind that @entry is a tuple
+        mod_path = entry[0][1:]
+        _logger_registry.insert(mod_path, entry[1])
 
     def _module_blacklisted(module):
         """Return true if a module has been filtered out of autoloading."""
@@ -56,7 +71,7 @@ def init(log_errors=True):
     def fswatch_callback(event_type, module_path):
         # the top-level folders we care about watching
         autoloadables = [
-            'plays', 'skills', 'tactics', 'evaluation', 'visualization'
+            'plays', 'skills', 'tactics', 'evaluation', 'visualization', 'loggers'
         ]
 
         # Don't load if we aren't a special module or if the filename is hidden
@@ -65,9 +80,10 @@ def init(log_errors=True):
             logging.info('.'.join(module_path) + " " + event_type)
 
             is_play = module_path[0] == 'plays'
+            is_logger = module_path[0] == 'loggers'
 
             if event_type == 'created':
-                if is_play:
+                if is_play or is_logger:
                     # we load the module and register the play class it contains with the play registry
                     # this makes it automatically show up in the play config tab in the gui
                     try:
@@ -79,17 +95,29 @@ def init(log_errors=True):
                         return
 
                     try:
-                        play_class = class_import.find_subclasses(module,
+                        if is_play:
+                            play_class = class_import.find_subclasses(module,
                                                                   play.Play)[0]
-                        _play_registry.insert(
-                            module_path[1:], play_class
-                        )  # note: skipping index zero of module_path cuts off the 'plays' part
+                            _play_registry.insert(
+                                module_path[1:], play_class
+                            )  # note: skipping index zero of module_path cuts off the 'plays' part
+                        elif is_logger:
+                            logger_class = class_import.find_subclasses(module,
+                                                                  customLogger.CustomLogger)[0]
+                            _logger_registry.insert(
+                                module_path[1:], logger_class
+                            )
                     except IndexError as e:
                         # we'll get an IndexError exception if the module didn't contain any Plays
                         # FIXME: instead, we should unload the module and just log a warning
-                        raise Exception(
+                        if is_play:
+                            raise Exception(
                             "Error: python files within the plays directory must contain a subclass of play.Play"
-                        )
+                            )
+                        elif is_logger:
+                            raise Exception(
+                            "Error: python files within the loggers directory must contain a subclass of customLogger.CustomLogger"
+                            )
             elif event_type == 'modified':
                 try:
                     # reload the module
@@ -191,6 +219,9 @@ def numEnablePlays():
     global _play_registry
     return len(_play_registry.get_enabled_plays_paths())
 
+def numEnableLoggers():
+    global _logger_registry
+    return len(_logger_registry.get_enabled_loggers_paths())
 
 ## Called ~60times/sec by the C++ GameplayModule
 def run():
@@ -222,6 +253,12 @@ def play_registry():
     global _play_registry
     return _play_registry
 
+_logger_registry = None
+
+
+def logger_registry():
+    global _logger_registry
+    return _logger_registry
 
 # returns the first robot in our robots with matching ID,
 # or None if no robots have the given ID

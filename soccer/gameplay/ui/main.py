@@ -39,6 +39,7 @@ def setup():
 
     pcTab = win.findChild(QtWidgets.QTreeView, 'plays')
     pcRLTab = win.findChild(QtWidgets.QTreeView, 'plays_RL')
+    logTab = win.findChild(QtWidgets.QTreeView, 'CustomLoggers')
 
     # setup play config tab
     pcTab.setModel(main.play_registry())
@@ -49,6 +50,12 @@ def setup():
     pcRLTab.expandAll()
     pcRLTab.resizeColumnToContents(0)
     logging.debug("Initialized RLPlayConfigTab")
+
+    #setup custom loggers
+    logTab.setModel(main.logger_registry())
+    logTab.expandAll()
+    logTab.resizeColumnToContents(0)
+    logging.debug("Initialized Custom Loggers")
 
     # bind the play label in the ui to the name of the current play
     play_name_label = win.findChild(QtWidgets.QLabel, 'current_play_name')

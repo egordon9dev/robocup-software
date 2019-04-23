@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1331</width>
+    <width>1038</width>
     <height>827</height>
    </rect>
   </property>
@@ -2195,8 +2195,8 @@
           <widget class="QToolButton" name="rlResetRobots">
            <property name="geometry">
             <rect>
-             <x>40</x>
-             <y>20</y>
+             <x>90</x>
+             <y>10</y>
              <width>171</width>
              <height>51</height>
             </rect>
@@ -2209,12 +2209,12 @@
            <property name="geometry">
             <rect>
              <x>10</x>
-             <y>340</y>
+             <y>405</y>
              <width>353</width>
-             <height>346</height>
+             <height>281</height>
             </rect>
            </property>
-           <layout class="QVBoxLayout" name="verticalLayout_14">
+           <layout class="QVBoxLayout" name="playbook_RL">
             <property name="spacing">
              <number>2</number>
             </property>
@@ -2400,7 +2400,7 @@
            <property name="geometry">
             <rect>
              <x>10</x>
-             <y>304</y>
+             <y>370</y>
              <width>151</width>
              <height>31</height>
             </rect>
@@ -2408,6 +2408,41 @@
            <property name="text">
             <string>TextLabel</string>
            </property>
+          </widget>
+          <widget class="QPushButton" name="newPositions">
+           <property name="geometry">
+            <rect>
+             <x>90</x>
+             <y>80</y>
+             <width>171</width>
+             <height>51</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Get New Positions</string>
+           </property>
+          </widget>
+          <widget class="QTreeView" name="CustomLoggers">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>160</y>
+             <width>461</width>
+             <height>211</height>
+            </rect>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <attribute name="headerCascadingSectionResizes">
+            <bool>true</bool>
+           </attribute>
+           <attribute name="headerStretchLastSection">
+            <bool>false</bool>
+           </attribute>
           </widget>
          </widget>
         </widget>
@@ -2422,7 +2457,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1331</width>
+     <width>1038</width>
      <height>20</height>
     </rect>
    </property>

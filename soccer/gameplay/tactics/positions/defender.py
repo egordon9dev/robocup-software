@@ -3,6 +3,7 @@ import behavior
 import constants
 import robocup
 import main
+import evaluation
 from enum import Enum
 import math
 import planning_priority
@@ -165,7 +166,7 @@ class Defender(single_robot_behavior.SingleRobotBehavior):
         shotVec = robocup.Point(main.ball().pos - self.robot.pos)
         backVecRot = robocup.Point(backVec.perp_ccw())
         facing_back_line = (backVecRot.dot(shotVec) < 0)
-        if not facing_back_line and self.robot.has_ball():
+        if not facing_back_line and evaluation.ball.robot_has_ball():
             if self.robot.has_chipper():
                 self.robot.chip(1)
             else:
@@ -244,7 +245,7 @@ class Defender(single_robot_behavior.SingleRobotBehavior):
         shotVec = robocup.Point(main.ball().pos - self.robot.pos)
         backVecRot = robocup.Point(backVec.perp_ccw())
         facing_back_line = (backVecRot.dot(shotVec) < 0)
-        if not facing_back_line and self.robot.has_ball():
+        if not facing_back_line and evaluation.ball.robot_has_ball(self.robot):
             if self.robot.has_chipper():
                 self.robot.chip(1)
             else:

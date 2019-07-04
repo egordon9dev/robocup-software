@@ -10,14 +10,12 @@ import evaluation
 ## A state machine that tracks the double touch rule
 #
 # From the official rules (as of 2013):
-#   "If, after the ball enters play other than due to a forced restart, the kicker touches the ball a second
-#    time (without holding the ball) before it has touched another robot:
 #      an indirect free kick is awarded to the opposing team, the kick to be taken from the place
 #      where the infringement occurred (see Law 13)"
 #
 class DoubleTouchTracker(fsm.StateMachine):
 
-    TOUCH_RADIUS = constants.Ball.Radius * 2.5
+    TOUCH_RADIUS = constants.Ball.Radius * 2.3
 
     class State(enum.Enum):
         start = 1
@@ -65,7 +63,7 @@ class DoubleTouchTracker(fsm.StateMachine):
     def _touching_ball(self, bot):
         """A function for combining the ball sense and our own home
         grown cookies and ice cream."""
-        return bot.has_ball() or self._bot_in_radius(bot)
+        return evaluation.ball.robot_has_ball(bot) or self._bot_in_radius(bot)
 
     ## The shell id of the robot that isn't allowed to touch the ball
     # returns None if everyone is allowed to touch
@@ -79,7 +77,7 @@ class DoubleTouchTracker(fsm.StateMachine):
         for bot in filter(lambda bot: bot.visible,
                           list(main.our_robots()) + list(main.their_robots())):
             if (bot.is_ours() and
-                bot.has_ball() and
+                evaluation.ball.robot_has_ball(bot) and
                     bot.shell_id() != self.kicker_shell_id):
                 return True
             if ((bot.shell_id() != self.kicker_shell_id or

@@ -14,8 +14,8 @@ import evaluation
 # The regular defender does a lot of calculations and figures out where it should be
 # This defender lets someone else (the Defense tactic) handle calculations and blocks things based on it
 #
-# The submissive defender takes in a block line via setter- this should be the line between the threat and 
-# the point on the goal the threat is likely to shoot at 
+# The submissive defender takes in a block line via setter- this should be the line between the threat and
+# the point on the goal the threat is likely to shoot at
 # The submissive defender will place itself on the block line, just outside the goal box (exact amount depends
 # on the value of the _defend_goal_radius param).
 class SubmissiveDefender(
@@ -164,7 +164,7 @@ class SubmissiveDefender(
         if (self.robot is not None and self.block_line is not None):
             self.robot.face(self.block_line.get_pt(0))
 
-        if self.robot.has_ball() and not main.game_state().is_stopped() and not self._self_goal(self.robot):
+        if evaluation.ball.robot_has_ball(self.robot) and not main.game_state().is_stopped() and not self._self_goal(self.robot):
             self.robot.kick(0.75)
 
     def _self_goal(self, robot):

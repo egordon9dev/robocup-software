@@ -3,6 +3,7 @@ import evaluation.double_touch
 import robocup
 import logging
 import math
+import evaluation
 
 # TODO arbitrary cost lambda property
 
@@ -286,7 +287,7 @@ def assign_roles(robots, role_reqs):
                     "Robot {}: Required ID {} does not match {}\n".format(
                         robot.shell_id(), req.required_shell_id,
                         robot.shell_id()))
-            elif req.has_ball and not robot.has_ball():
+            elif req.has_ball and not evaluation.ball.robot_has_ball(robot):
                 cost = MaxWeight
                 fail_reason += "Robot {}: does not have ball\n".format(
                     robot.shell_id())

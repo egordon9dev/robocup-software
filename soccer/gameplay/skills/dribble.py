@@ -6,6 +6,7 @@ import main
 import constants
 import time
 import enum
+import evaluation
 import skills.aim
 import skills.capture
 import skills.move
@@ -54,7 +55,7 @@ class Dribble(single_robot_composite_behavior.SingleRobotCompositeBehavior):
 
         #Put the ball between the robot and the target
         self.add_transition(Dribble.State.aim, Dribble.State.drive,
-                            lambda: self.aimed() and self.robot.has_ball(),
+                            lambda: self.aimed() and evaluation.ball.robot_has_ball(self.robot),
                             'done aiming')
 
         self.add_transition(Dribble.State.aim, Dribble.State.setup,
@@ -75,7 +76,7 @@ class Dribble(single_robot_composite_behavior.SingleRobotCompositeBehavior):
         self.last_ball_time = 0
 
     def fumbled(self):
-        return not self.robot.has_ball() and time.time(
+        return not evaluation.ball.robot_has_ball(self.robot) and time.time(
         ) - self.last_ball_time > 1.2
 
     ## the position to move to (a robocup.Point object)
@@ -128,7 +129,7 @@ class Dribble(single_robot_composite_behavior.SingleRobotCompositeBehavior):
         self.robot.set_max_angle_speed(2)
         self.robot.pivot(self.pos)
         self.robot.set_dribble_speed(self._dribble_speed)
-        if self.robot.has_ball():
+        if evaluation.ball.robot_has_ball(self.robot):
             self.last_ball_time = time.time()
 
     def on_enter_drive(self):
@@ -146,7 +147,7 @@ class Dribble(single_robot_composite_behavior.SingleRobotCompositeBehavior):
         #offset by the size of the robot so the ball is on the target position when it stops
         self.robot.disable_avoid_ball()
 
-        if self.robot.has_ball():
+        if evaluation.ball.robot_has_ball(self.robot):
             self.last_ball_time = time.time()
 
     def on_exit_drive(self):

@@ -8,21 +8,54 @@ class Move(single_robot_behavior.SingleRobotBehavior):
     def __init__(self, pos=None):
         super().__init__(continuous=False)
 
-        self.threshold = 0.05
+        self.threshold = None
+
+        self.smallThreshold = None
+
+        self.preciseTimeout = None
+
         self.pos = pos
+
+        self.bigTimer = None
+        self.smallTimer = None
+        self.stoppedTimer = None
+
 
         self.add_transition(behavior.Behavior.State.start,
                             behavior.Behavior.State.running, lambda: True,
                             'immediately')
 
-        self.add_transition(
+        '''self.add_transition(
             behavior.Behavior.State.running, behavior.Behavior.State.completed,
             lambda: self.pos != None and (self.robot.pos - self.pos).mag() < self.threshold,
-            'target pos reached')
+            'target pos reached')'''
+
         self.add_transition(
             behavior.Behavior.State.completed, behavior.Behavior.State.running,
-            lambda: self.pos != None and (self.robot.pos - self.pos).mag() > self.threshold,
+            lambda: self.pos != None and self.robot.vel.mag() >= 0.05 and False,
             'away from target')
+
+
+        self.add_transition(
+            behavior.Behavior.State.running, behavior.Behavior.State.completed,
+            lambda: self.pos != None and self.robot.vel.mag() <= 0.05 and (self.robot.pos - self.pos).mag() < 0.2,
+            'away from target')
+
+
+
+
+    def inBigCircle():
+        print("We are in the big circle")
+
+    def preciseTimeout():
+        print("High precision has timed out")
+
+    def preciseReached():
+        print("We have reached the big circle")
+
+    def hasStopped():
+        print("The robot is ")
+
 
     ## the position to move to (a robocup.Point object)
     @property

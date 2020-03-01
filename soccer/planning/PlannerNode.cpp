@@ -1,6 +1,8 @@
 #include "planning/planner/PathTargetPlanner.hpp"
 #include "planning/planner/PivotPathPlanner.hpp"
-#include "planning/planner/CapturePlanner.hpp"
+#include "planning/planner/CollectPlanner.hpp"
+#include "planning/planner/SettlePlanner.hpp"
+#include "planning/planner/LineKickPlanner.hpp"
 #include "planning/planner/EscapeObstaclesPathPlanner.hpp"
 #include "PlannerNode.hpp"
 #include "Robot.hpp"
@@ -9,7 +11,9 @@ namespace Planning {
 
 PlannerNode::PlannerNode(Context* context) : context_(context), plannerIdx(Num_Shells, -1) {
     planners_.push_back(std::make_unique<PathTargetPlanner>());
-    planners_.push_back(std::make_unique<CapturePlanner>());
+    planners_.push_back(std::make_unique<SettlePlanner>());
+    planners_.push_back(std::make_unique<CollectPlanner>());
+    planners_.push_back(std::make_unique<LineKickPlanner>());
     planners_.push_back(std::make_unique<PivotPathPlanner>());
 
     // The empty planner should always be last.

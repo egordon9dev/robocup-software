@@ -360,6 +360,14 @@
  <LazyPlanner>
   <partialReplanLeadTime value="0.2"/>
  </LazyPlanner>
+ <PathTargetPlanner>
+  <goalPosChangeThreshold value="0.025"/>
+  <goalVelChangeThreshold value="0.025"/>
+ </PathTargetPlanner>
+ <LineKickPlanner>
+  <goalPosChangeThreshold value="0.025"/>
+  <goalVelChangeThreshold value="0.025"/>
+ </LineKickPlanner>
  <Capture>
   <searchStartDist value="0"/>
   <searchEndDist value="7"/>
@@ -374,10 +382,14 @@
    <bufferDistBeforeContact value="0.156"/>
    <bufferDistAfterContact value="0.0"/>
    <ballSpeedApproachDirectionCutoff value="0.1"/>
+   <goalPosChangeThreshold value="0.025"/>
+   <goalVelChangeThreshold value="0.025"/>
   </Collect>
   <Settle>
    <bufferTimeBeforeContact value="0.1"/>
-   <targetSensitivity value="0.5"/>
+   <targetSensitivity value="0.00002"/>
+   <goalPosChangeThreshold value="0.09"/>
+   <goalVelChangeThreshold value="0.025"/>
   </Settle>
  </Capture>
 </config>

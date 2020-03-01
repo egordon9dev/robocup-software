@@ -1,11 +1,20 @@
 #include "planning/planner/PathTargetPlanner.hpp"
-#include "planning/planner/Planner.hpp"
 #include "planning/planner/PlanRequest.hpp"
 #include "planning/trajectory/Trajectory.hpp"
 #include "planning/trajectory/VelocityProfiling.hpp"
 #include "planning/trajectory/RRTUtil.hpp"
 
 namespace Planning {
+
+ConfigDouble* PathTargetPlanner::_goalPosChangeThreshold;
+ConfigDouble* PathTargetPlanner::_goalVelChangeThreshold;
+
+REGISTER_CONFIGURABLE(PathTargetPlanner);
+
+void PathTargetPlanner::createConfiguration(Configuration* cfg) {
+    _goalPosChangeThreshold = new ConfigDouble(cfg, "PathTargetPlanner/goalChangeThreshold", 0);
+    _goalVelChangeThreshold = new ConfigDouble(cfg, "PathTargetPlanner/velChangeThreshold", 0);
+}
 
 Trajectory PathTargetPlanner::checkBetter(PlanRequest&& request, RobotInstant goalInstant, AngleFunction angleFunction) {
     Trajectory& prevTrajectory = request.prevTrajectory;

@@ -57,29 +57,6 @@ void CapturePlanner::createConfiguration(Configuration* cfg) {
     _settleTargetSensitivity = new ConfigDouble(cfg,
             "Capture/Settle/targetSensitivity", 0);
 }
-RobotInstant CapturePlanner::getGoalInstant(const PlanRequest& request) {
-    auto bruteForceResult = bruteForceCapture(request);
-    Trajectory path{{}};
-    if(bruteForceResult) {
-        std::tie(_contactTime, path) = std::move(*bruteForceResult);
-    }
-    if(path.empty()) {
-        Point ballPoint = request.context->state.ball.pos;
-        Point startPoint = request.start.pose.position();
-        return RobotInstant{Pose{ballPoint,startPoint.angleTo(ballPoint)}, {}, RJ::now()};
-    }
-    double a = *_settleTargetSensitivity;
-    Point targetPoint = path.last().pose.position();
-    if(!avgTargetPoint) {
-        avgTargetPoint = targetPoint;
-    } else {
-        avgTargetPoint = a * targetPoint + (1-a) * *avgTargetPoint;
-    }
-    RobotInstant targetInstant = path.last();
-    targetInstant.pose.position() = *avgTargetPoint;
-    return targetInstant;
-
-}
 
 Trajectory CapturePlanner::checkBetter(PlanRequest&& request, RobotInstant goalInstant, AngleFunction angleFunction) {
     _contactTime = std::max(_contactTime, RJ::now());

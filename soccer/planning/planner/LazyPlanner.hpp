@@ -37,6 +37,17 @@ public:
         return RJ::Seconds{*_partialReplanLeadTime};
     }
 
+    /**
+     * maximum distance between goals before replan
+     * @return distance
+     */
+    virtual double goalPosChangeThreshold() const = 0;
+    /**
+     * maximum velocity change before replan
+     * @return velocity change
+     */
+    virtual double goalVelChangeThreshold() const = 0;
+
 protected:
     /**
      * get the angle function used to plan angles
@@ -110,8 +121,6 @@ private:
 
     static ConfigDouble* _partialReplanLeadTime;
     std::vector<RJ::Time> prevTimes;
-
-
 };
 
 }

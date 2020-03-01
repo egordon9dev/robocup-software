@@ -140,7 +140,7 @@ namespace Planning {
                               goal.pose.position()).mag();
         double goalVelDiff = (prevGoal.velocity.linear() -
                               goal.velocity.linear()).mag();
-        return goalPosDiff > Planner::goalPosChangeThreshold()
-               || goalVelDiff > Planner::goalVelChangeThreshold();
+        return goalPosDiff > goalPosChangeThreshold()
+               || goalVelDiff > goalVelChangeThreshold();
     }
 }

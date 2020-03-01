@@ -4,6 +4,7 @@
 #include "planning/planner/Planner.hpp"
 #include "planning/planner/PathTargetPlanner.hpp"
 /*
+ * Abstract class for shared logic between Collect, Settle, and LineKick
  * Plans a trajectory to the ball. After we reach the ball, it's up to Gameplay
  * to figure out what to do next (i.e. pass, shoot, pivot, etc.)
  */
@@ -13,23 +14,21 @@ public:
     CapturePlanner(): _contactTime(0s) {};
     ~CapturePlanner() override = default;
 
-    bool isApplicable(const MotionCommand& motionCommand) const override {
-        return std::holds_alternative<CollectCommand>(motionCommand)
-                || std::holds_alternative<SettleCommand>(motionCommand)
-                || std::holds_alternative<LineKickCommand>(motionCommand);
-    };
+    bool isApplicable(const MotionCommand& motionCommand) const override = 0;
 
-    Trajectory checkBetter(PlanRequest&& request, RobotInstant goalInstant, AngleFunction angleFunction) override;
-    Trajectory partialReplan(PlanRequest&& request, RobotInstant goalInstant, AngleFunction angleFunction) override;
-    Trajectory fullReplan(PlanRequest&& request, RobotInstant goalInstant, AngleFunction angleFunction) override;
-
-    RobotInstant getGoalInstant(const PlanRequest& request) override;
+    double goalPosChangeThreshold() const override = 0;
+    double goalVelChangeThreshold() const override = 0;
 
     std::string name() const { return "CapturePlanner"; };
 
     static void createConfiguration(Configuration* cfg);
 
-private:
+protected:
+    RobotInstant getGoalInstant(const PlanRequest& request) override = 0;
+    Trajectory checkBetter(PlanRequest&& request, RobotInstant goalInstant, AngleFunction angleFunction) override;
+    Trajectory partialReplan(PlanRequest&& request, RobotInstant goalInstant, AngleFunction angleFunction) override;
+    Trajectory fullReplan(PlanRequest&& request, RobotInstant goalInstant, AngleFunction angleFunction) override;
+
     Geometry2d::Point projectPointIntoField(Geometry2d::Point targetPoint, const Geometry2d::Rect& fieldRect, Geometry2d::Point ballPoint) const;
 
     std::tuple<Geometry2d::Point, Geometry2d::Point, RJ::Time, bool>
@@ -104,9 +103,6 @@ private:
     static constexpr double maxBallPosChange = 0.2;
     static constexpr double maxBallVelAngleChange = 0.5;
     static constexpr double lineKickApproachSpeed = 0.25;
-    std::optional<Ball> prevBall;
-    std::optional<Geometry2d::Point> avgTargetPoint;
-
     RJ::Time _contactTime;
 };
 }

@@ -13,26 +13,24 @@ using namespace Geometry2d;
 RobotInstant SettlePlanner::getGoalInstant(const PlanRequest& request) {
     auto bruteForceResult = bruteForceCapture(request);
     Trajectory path{{}};
+    Pose contactPose;
     if(bruteForceResult) {
         //TODO: this part should probably be done in the parent class
-        std::tie(_contactTime, path) = std::move(*bruteForceResult);
+        std::tie(path, contactPose) = std::move(*bruteForceResult);
     }
-    if(path.empty()) {
+    if(path.empty() || 1) {
         Point ballPoint = request.context->state.ball.pos;
         Point startPoint = request.start.pose.position();
         return RobotInstant{Pose{ballPoint,startPoint.angleTo(ballPoint)}, {}, RJ::now()};
     }
+    Point targetBallPoint = contactPose.position() + Point::direction(contactPose.heading()).normalized(Robot_MouthRadius + Ball_Radius);
     double a = *_settleTargetSensitivity;
-    Point targetPoint = path.last().pose.position();
-    std::optional<Point>& avgTargetPoint = avgTargetPoints[request.shellID];
-    if(!avgTargetPoint) {
-        avgTargetPoint = targetPoint;
+    std::optional<Point>& avgTargetBallPoint = _avgTargetBallPoints[request.shellID];
+    if(!avgTargetBallPoint) {
+        avgTargetBallPoint = targetBallPoint;
     } else {
-        avgTargetPoint = a * targetPoint + (1-a) * *avgTargetPoint;
+        avgTargetBallPoint = a * targetBallPoint + (1-a) * *avgTargetBallPoint;
     }
-    RobotInstant targetInstant = path.last();
-    targetInstant.pose.position() = *avgTargetPoint;
-    return targetInstant;
-
+    return RobotInstant{Pose{*avgTargetBallPoint, 0}, {}, RJ::Time(0s)};
 }
 }

@@ -3,7 +3,7 @@
 namespace Planning {
 class SettlePlanner: public CapturePlanner {
 public:
-    SettlePlanner(): avgTargetPoints(Num_Shells, std::nullopt) {}
+    SettlePlanner(): _avgTargetBallPoints(Num_Shells, std::nullopt) {}
 
     static void createConfiguration(Configuration* cfg);
 
@@ -25,6 +25,6 @@ private:
     static ConfigDouble* _goalPosChangeThreshold;
     static ConfigDouble* _goalVelChangeThreshold;
 
-    std::vector<std::optional<Geometry2d::Point>> avgTargetPoints;
+    std::vector<std::optional<Geometry2d::Point>> _avgTargetBallPoints;
 };
 }

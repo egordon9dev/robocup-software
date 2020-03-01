@@ -11,7 +11,7 @@
 namespace Planning {
 class CapturePlanner: public LazyPlanner {
 public:
-    CapturePlanner(): _contactTime(0s) {};
+    CapturePlanner() = default;
     ~CapturePlanner() override = default;
 
     bool isApplicable(const MotionCommand& motionCommand) const override = 0;
@@ -34,13 +34,13 @@ protected:
     std::tuple<Geometry2d::Point, Geometry2d::Point, RJ::Time, bool>
     predictFutureBallState(const Ball& ball, RJ::Time contactTime) const;
 
-    std::optional<std::tuple<Trajectory, bool>> attemptCapture(const PlanRequest& request, RJ::Time contactTime) const;
+    std::optional<std::tuple<Trajectory, Geometry2d::Pose, bool>> attemptCapture(const PlanRequest& request, RJ::Time contactTime) const;
 
     /*
      * finds a goal point by brute force along the ball path
      * this method assumes final velocity of 0 which
      */
-    std::optional<std::tuple<RJ::Time, Trajectory>> bruteForceCapture(const PlanRequest& request) const;
+    std::optional<std::tuple<Trajectory, Geometry2d::Pose>> bruteForceCapture(const PlanRequest& request) const;
 
     //endpoints used for searching along the ball path
     static ConfigDouble* _searchStartDist; // m
@@ -103,6 +103,5 @@ protected:
     static constexpr double maxBallPosChange = 0.2;
     static constexpr double maxBallVelAngleChange = 0.5;
     static constexpr double lineKickApproachSpeed = 0.25;
-    RJ::Time _contactTime;
 };
 }

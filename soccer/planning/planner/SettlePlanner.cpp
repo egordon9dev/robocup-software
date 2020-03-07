@@ -11,15 +11,16 @@ void SettlePlanner::createConfiguration(Configuration* cfg) {
 }
 using namespace Geometry2d;
 RobotInstant SettlePlanner::getGoalInstant(const PlanRequest& request) {
+    const Ball& ball = request.context->state.ball;
     auto bruteForceResult = bruteForceCapture(request);
     Trajectory path{{}};
     Pose contactPose;
     if(bruteForceResult) {
-        //TODO: this part should probably be done in the parent class
         std::tie(path, contactPose) = std::move(*bruteForceResult);
     }
-    if(path.empty() || 1) {
-        Point ballPoint = request.context->state.ball.pos;
+    if(path.empty()) {
+        std::optional<Point> prevTarget = _avgTargetBallPoints[request.shellID];
+        Point ballPoint = prevTarget ? *prevTarget : ball.pos;
         Point startPoint = request.start.pose.position();
         return RobotInstant{Pose{ballPoint,startPoint.angleTo(ballPoint)}, {}, RJ::now()};
     }

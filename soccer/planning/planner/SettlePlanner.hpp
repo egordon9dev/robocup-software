@@ -18,6 +18,20 @@ public:
         return *_goalVelChangeThreshold;
     }
 
+    bool veeredOffPath(const PlanRequest& req) const override { return false; }
+
+    Trajectory fullReplan(PlanRequest&& req, RobotInstant goalInstant, AngleFunction angleF) override {
+        const Trajectory& prevTraj = req.prevTrajectory;
+        if(!prevTraj.empty()) {
+            RJ::Time startT = req.start.stamp;
+            std::optional<RobotInstant> optStart = prevTraj.evaluate(startT);
+            if(optStart) {
+                req.start = *optStart;
+            }
+        }
+        return CapturePlanner::fullReplan(std::move(req), goalInstant, angleF);
+    }
+
 protected:
     RobotInstant getGoalInstant(const PlanRequest& request) override;
 

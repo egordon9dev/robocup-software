@@ -116,9 +116,9 @@ protected:
         return prevTimes[shell];
     }
 
-private:
-    bool veeredOffPath(const PlanRequest& request) const;
+    virtual bool veeredOffPath(const PlanRequest& request) const;
 
+private:
     static ConfigDouble* _partialReplanLeadTime;
     std::vector<RJ::Time> prevTimes;
 };

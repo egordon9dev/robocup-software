@@ -59,8 +59,6 @@ void CapturePlanner::createConfiguration(Configuration* cfg) {
 }
 
 Trajectory CapturePlanner::checkBetter(PlanRequest&& request, RobotInstant goalInstant, AngleFunction angleFunction) {
-    //todo(Ethan) delete this line
-    return reuse(std::move(request));
     Trajectory prevTrajectoryCopy = request.prevTrajectory;
     Trajectory newTrajectory = partialReplan(std::move(request), goalInstant, angleFunction);
     if(newTrajectory.end_time() < prevTrajectoryCopy.end_time()) {
@@ -69,8 +67,6 @@ Trajectory CapturePlanner::checkBetter(PlanRequest&& request, RobotInstant goalI
     return std::move(prevTrajectoryCopy);
 }
 Trajectory CapturePlanner::partialReplan(PlanRequest&& request, RobotInstant goalInstant,   AngleFunction angleFunction) {
-    //todo(Ethan) delete this line
-    return reuse(std::move(request));
     RJ::Time contactTime = request.context->state.ball.estimateTimeTo(goalInstant.pose.position());
     contactTime = std::min(contactTime, RJ::Time{RJ::now() + RJ::Seconds{20s}});
     RobotInstant startInstant = request.start;
@@ -85,10 +81,8 @@ Trajectory CapturePlanner::partialReplan(PlanRequest&& request, RobotInstant goa
 }
 Trajectory CapturePlanner::fullReplan(PlanRequest&& request, RobotInstant goalInstant, AngleFunction angleFunction) {
     RJ::Time contactTime = request.context->state.ball.estimateTimeTo(goalInstant.pose.position());
-    contactTime = std::min(contactTime, RJ::Time{RJ::now() + RJ::Seconds{.01s}});
-    // todo(Ethan) fix this!!!!!! it only works when using now() + 1s
-    // todo(Ethan) but it doesn't work when using now() + 0s ??? wtf. why???
-    auto captureResult = attemptCapture(request, RJ::now() + RJ::Seconds{0s});
+    contactTime = std::min(contactTime, RJ::Time{RJ::now() + RJ::Seconds{.1s}});
+    auto captureResult = attemptCapture(request, contactTime);
     if(!captureResult) {
         return reuse(std::move(request));
     }
@@ -114,7 +108,7 @@ std::optional<std::tuple<Trajectory, Geometry2d::Pose>> CapturePlanner::bruteFor
         bool successfulCapture = false;
         RJ::Time attemptt0 = RJ::now();
         auto pathResult = attemptCapture(request, contactTime);
-        printf("   attempt took %.3f sec, its: %d\n", RJ::Seconds(RJ::now()-attemptt0).count(), its);//todo(Ethan) delete
+//        printf("   attempt took %.3f sec, its: %d\n", RJ::Seconds(RJ::now()-attemptt0).count(), its);//todo(Ethan) delete
         if(pathResult) {
             std::tie(candidatePath, contactPose, successfulCapture) = std::move(*pathResult);
             if(successfulCapture) {
@@ -124,8 +118,6 @@ std::optional<std::tuple<Trajectory, Geometry2d::Pose>> CapturePlanner::bruteFor
             } else if (candidatePath && !candidatePath->empty() && (!path || candidatePath->duration() < path->duration())) {
                 // find the best path in case none of them are successful
                 path = candidatePath;
-                //todo(Ethan) delete this break
-                break;
             }
         }
         contactTime = RJ::Time{contactTime + brute_inc};
@@ -187,6 +179,7 @@ Point CapturePlanner::projectPointIntoField(Point targetPoint, const Rect& field
     return targetPoint;
 }
 //todo(Ethan) add ball as a dyn obs
+//TODO this function is too long
 std::optional<std::tuple<Trajectory, Pose, bool>> CapturePlanner::attemptCapture(const PlanRequest& request, RJ::Time contactTime) const {
     const Ball& ball = request.context->state.ball;
     const ShapeSet& static_obstacles = request.static_obstacles;
@@ -201,7 +194,7 @@ std::optional<std::tuple<Trajectory, Pose, bool>> CapturePlanner::attemptCapture
 
     ShapeSet static_obstacles_with_ball = static_obstacles;
 
-        // Calculate the desired state of the robot at the point of ball contact
+    // Calculate the desired state of the robot at the point of ball contact
     // based on the command type
     Point targetFacePoint;
     double contactSpeed = 0;
@@ -276,11 +269,13 @@ std::optional<std::tuple<Trajectory, Pose, bool>> CapturePlanner::attemptCapture
     if(ball.pos.distTo(startInstant.pose.position()) > bufferDistBeforeContact + Robot_Radius + Ball_Radius) {
         coursePath = RRTTrajectory(startInstant, courseTargetInstant, constraints.mot, static_obstacles_with_ball, dynamic_obstacles);
         if(coursePath->empty()) {
+            printf("attemptCapture: Course RRT Failed\n");
             return std::nullopt;
         }
         courseTargetInstant.stamp = coursePath->last().stamp;
         contactBallTime = coursePath->last().stamp;
     } else {
+        printf("attemptCapture: in Fine, returning nullopt\n");
         //todo(Ethan) Really? (see below todo)
         return std::nullopt;
     }
@@ -304,8 +299,10 @@ std::optional<std::tuple<Trajectory, Pose, bool>> CapturePlanner::attemptCapture
                 if(coursePath) {
                     Trajectory out = std::move(*coursePath);
                     PlanAngles(out, startInstant, AngleFns::faceAngle(contactFaceDir.angle()), constraints.rot);
+                    printf("attemptCapture: Fine failed returning Course part\n");
                     return std::make_tuple(std::move(out), contactPose, false);
                 }
+                printf("attemptCapture: both RRTs Failed\n");
                 return std::nullopt;
             }
             contactInstant.stamp = finePathBeforeContact->last().stamp;
@@ -322,21 +319,27 @@ std::optional<std::tuple<Trajectory, Pose, bool>> CapturePlanner::attemptCapture
                 if(coursePath && finePathBeforeContact) {
                     Trajectory out{std::move(*coursePath), std::move(*finePathBeforeContact)};
                     PlanAngles(out, startInstant, AngleFns::faceAngle(contactFaceDir.angle()), constraints.rot);
+                    printf("attemptCapture: finePathAfter failed\n");
                     return std::make_tuple(std::move(out), contactPose, false);
                 } else if(coursePath) {
                     Trajectory out = std::move(*coursePath);
                     PlanAngles(out, startInstant, AngleFns::faceAngle(contactFaceDir.angle()), constraints.rot);
+                    printf("attemptCapture: Fine before failed\n");
                     return std::make_tuple(std::move(out), contactPose, false);
                 }
+                printf("attemptCapture: Course and After failed\n");
                 return std::nullopt;
             }
         }
     } else {
         if(coursePath) {
+            // this is the Main Success Scenario for a Settle Command
             Trajectory out = std::move(*coursePath);
             PlanAngles(out, startInstant, AngleFns::faceAngle(contactFaceDir.angle()), constraints.rot);
+//            printf("attemptCapture: contactVel=0, using just Course\n");
             return std::make_tuple(std::move(out), contactPose, false);
         } else {
+            printf("attemptCapture: contactVel=0, Course RRT Failed\n");
             return std::nullopt;
         }
     }
@@ -344,6 +347,8 @@ std::optional<std::tuple<Trajectory, Pose, bool>> CapturePlanner::attemptCapture
     //combine all the trajectory segments to build the output path
     Trajectory collectPath{{}};
     if(coursePath) {
+        // this is the Main Success Scenario for a Collect Command
+//        printf("attemptCapture: Success, returning full path\n");
         assert(finePathBeforeContact && finePathAfterContact);
         Trajectory finePath{std::move(*finePathBeforeContact), std::move(*finePathAfterContact)};
         collectPath = Trajectory{std::move(*coursePath), std::move(finePath)};
@@ -353,6 +358,7 @@ std::optional<std::tuple<Trajectory, Pose, bool>> CapturePlanner::attemptCapture
 //            collectPath = Trajectory{std::move(*finePathBeforeContact), std::move(*finePathAfterContact)};
 //            collectPath.setDebugText("Fine");
     } else {
+        printf("attemptCapture: too close to ball\n");
         //we're too close to the ball to trust anything. just reuse old path
         //todo(Ethan) REeally?
         return std::nullopt;

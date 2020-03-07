@@ -386,7 +386,7 @@
    <goalVelChangeThreshold value="0.025"/>
   </Collect>
   <Settle>
-   <bufferTimeBeforeContact value="0.1"/>
+   <bufferTimeBeforeContact value="0.0"/>
    <targetSensitivity value="0.00002"/>
    <goalPosChangeThreshold value="0.09"/>
    <goalVelChangeThreshold value="0.025"/>

@@ -5,6 +5,7 @@
 #include "Geometry2d/Pose.hpp"
 #include "Geometry2d/Rect.hpp"
 #include <functional>
+#include <mutex>
 #include "motion/TrapezoidalMotion.hpp"
 
 namespace Planning {
@@ -92,36 +93,46 @@ Trajectory CapturePlanner::fullReplan(PlanRequest&& request, RobotInstant goalIn
 std::optional<std::tuple<Trajectory, Geometry2d::Pose>> CapturePlanner::bruteForceCapture(const PlanRequest& request) const {
     Ball& ball = request.context->state.ball;
     int its = 0;
-    constexpr RJ::Seconds maxSearchDuration = 3s;
-    constexpr RJ::Seconds brute_inc = 0.1s;
+    constexpr int maxSearchDuration = 3e6;//us
+    constexpr int brute_inc = 1e5;
     std::optional<Trajectory> path;
     RJ::Time startTime = RJ::now();
     Point botPos = request.start.pose.position();
     double botSpeed = request.start.velocity.linear().mag();
     double distToBallLine = std::abs(ball.vel.norm().cross(ball.pos-botPos));
-    double timeEstimate = Trapezoidal::getTime(distToBallLine, distToBallLine, request.constraints.mot.maxSpeed,request.constraints.mot.maxAcceleration, botSpeed, 0);
-    RJ::Time contactTime = RJ::now() + RJ::Seconds{timeEstimate};
+    const double timeEstimate = Trapezoidal::getTime(distToBallLine, distToBallLine, request.constraints.mot.maxSpeed,request.constraints.mot.maxAcceleration, botSpeed, 0);
+    int nTimeEst = (int)(timeEstimate*1e6);
     Geometry2d::Pose contactPose;
-    RJ::Time searchStartTime = contactTime;
-    while(contactTime < searchStartTime + maxSearchDuration) {
+    #pragma omp parallel for default(none) shared(nTimeEst, contactPose, \
+    path, its, request)
+    for(int contactDuration = nTimeEst; contactDuration < nTimeEst + maxSearchDuration; contactDuration += brute_inc) {
         std::optional<Trajectory> candidatePath;
         bool successfulCapture = false;
         RJ::Time attemptt0 = RJ::now();
-        auto pathResult = attemptCapture(request, contactTime);
-//        printf("   attempt took %.3f sec, its: %d\n", RJ::Seconds(RJ::now()-attemptt0).count(), its);//todo(Ethan) delete
-        if(pathResult) {
-            std::tie(candidatePath, contactPose, successfulCapture) = std::move(*pathResult);
-            if(successfulCapture) {
-                // use the first successful path found
-                path = candidatePath;
-                break;
-            } else if (candidatePath && !candidatePath->empty() && (!path || candidatePath->duration() < path->duration())) {
-                // find the best path in case none of them are successful
-                path = candidatePath;
-            }
+        std::optional<PlanRequest> reqCopy;
+        std::optional<RJ::Time> contactTimeCopy;
+        #pragma omp critical
+        {
+            reqCopy = PlanRequest{request.context, request.start, request.motionCommand, request.constraints, Trajectory{{}}, request.static_obstacles, request.dynamic_obstacles, request.shellID, request.priority};
+            contactTimeCopy = RJ::now() + RJ::Seconds{contactDuration * 1e-6};
         }
-        contactTime = RJ::Time{contactTime + brute_inc};
-        its++;
+        auto pathResult = attemptCapture(*reqCopy, *contactTimeCopy);
+        #pragma omp critical
+        {
+    //        printf("   attempt took %.3f sec, its: %d\n", RJ::Seconds(RJ::now()-attemptt0).count(), its);//todo(Ethan) delete
+            if(pathResult) {
+                std::tie(candidatePath, contactPose, successfulCapture) = std::move(*pathResult);
+                if(successfulCapture) {
+                    // use the first successful path found
+                    path = candidatePath;
+    //                break;
+                } else if (candidatePath && !candidatePath->empty() && (!path || candidatePath->duration() < path->duration())) {
+                    // find the best path in case none of them are successful
+                    path = candidatePath;
+                }
+            }
+            its++;
+        }
     }
     printf("brute force took %.3f sec, its: %d\n", RJ::Seconds(RJ::now()-startTime).count(), its);//todo(Ethan) delete
     if(path) {

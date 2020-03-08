@@ -93,48 +93,39 @@ Trajectory CapturePlanner::fullReplan(PlanRequest&& request, RobotInstant goalIn
 std::optional<std::tuple<Trajectory, Geometry2d::Pose>> CapturePlanner::bruteForceCapture(const PlanRequest& request) const {
     Ball& ball = request.context->state.ball;
     int its = 0;
-    constexpr int maxSearchDuration = 3e6;//us
-    constexpr int brute_inc = 1e5;
-    std::optional<Trajectory> path;
+    constexpr double maxSearchDuration = 6;
+    constexpr int iterations = 30;
     RJ::Time startTime = RJ::now();
+    //Calculate the time values to use for brute force
     Point botPos = request.start.pose.position();
     double botSpeed = request.start.velocity.linear().mag();
     double distToBallLine = std::abs(ball.vel.norm().cross(ball.pos-botPos));
     const double timeEstimate = Trapezoidal::getTime(distToBallLine, distToBallLine, request.constraints.mot.maxSpeed,request.constraints.mot.maxAcceleration, botSpeed, 0);
-    int nTimeEst = (int)(timeEstimate*1e6);
+    auto [ballHorizonPos, ballHorizonVel, ballHorizonTime, ballHorizonFake]
+    = predictFutureBallState(ball,RJ::now() + RJ::Seconds{1000s});
+    std::vector<RJ::Time> times;
+    double searchEnd = std::min(maxSearchDuration, RJ::Seconds{ballHorizonTime-RJ::now()}.count());
+    double searchStart = std::min(timeEstimate, searchEnd);
+    for(int i = 0; i < iterations; i++) {
+        double percent = (double)i / (iterations-1);
+        times.push_back(RJ::now() + RJ::Seconds{searchStart + percent
+        * (searchEnd-searchStart)});
+    }
+    //Run brute force using a parallel for loop thanks to OpenMP
+    std::optional<Trajectory> path;
     Geometry2d::Pose contactPose;
-    #pragma omp parallel for default(none) shared(nTimeEst, contactPose, \
-    path, its, request)
-    for(int contactDuration = nTimeEst; contactDuration < nTimeEst + maxSearchDuration; contactDuration += brute_inc) {
-        std::optional<Trajectory> candidatePath;
-        bool successfulCapture = false;
-        RJ::Time attemptt0 = RJ::now();
-        std::optional<PlanRequest> reqCopy;
-        std::optional<RJ::Time> contactTimeCopy;
+    #pragma omp parallel for default(none) shared(contactPose, path, request, times)
+    for(int i = 0; i < iterations; i++) {
+        auto pathResult = attemptCapture(request, times[i]);
         #pragma omp critical
-        {
-            reqCopy = PlanRequest{request.context, request.start, request.motionCommand, request.constraints, Trajectory{{}}, request.static_obstacles, request.dynamic_obstacles, request.shellID, request.priority};
-            contactTimeCopy = RJ::now() + RJ::Seconds{contactDuration * 1e-6};
-        }
-        auto pathResult = attemptCapture(*reqCopy, *contactTimeCopy);
-        #pragma omp critical
-        {
-    //        printf("   attempt took %.3f sec, its: %d\n", RJ::Seconds(RJ::now()-attemptt0).count(), its);//todo(Ethan) delete
-            if(pathResult) {
-                std::tie(candidatePath, contactPose, successfulCapture) = std::move(*pathResult);
-                if(successfulCapture) {
-                    // use the first successful path found
-                    path = candidatePath;
-    //                break;
-                } else if (candidatePath && !candidatePath->empty() && (!path || candidatePath->duration() < path->duration())) {
-                    // find the best path in case none of them are successful
-                    path = candidatePath;
-                }
+        if(pathResult) {
+            auto [candidatePath, contactPose, successfulCapture] = std::move(*pathResult);
+            if (!candidatePath.empty() && (!path || candidatePath.duration() < path->duration())) {
+                path = std::move(candidatePath);
             }
-            its++;
         }
     }
-    printf("brute force took %.3f sec, its: %d\n", RJ::Seconds(RJ::now()-startTime).count(), its);//todo(Ethan) delete
+    printf("brute force took %.3f sec\n", RJ::Seconds(RJ::now()-startTime).count());//todo(Ethan) delete
     if(path) {
         assert(!path->empty());
         return std::make_tuple(std::move(*path), contactPose);

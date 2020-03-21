@@ -5,31 +5,21 @@
 #include <vector>
 
 namespace Planning {
-    ConfigDouble* LazyPlanner::_partialReplanLeadTime;
+    ConfigDouble* LazyPlanner::defaultPartialReplanLeadTime;
 
     REGISTER_CONFIGURABLE(LazyPlanner);
 
     void LazyPlanner::createConfiguration(Configuration* cfg) {
-        _partialReplanLeadTime = new ConfigDouble(cfg, "LazyPlanner/partialReplanLeadTime", 0.0);
+        defaultPartialReplanLeadTime = new ConfigDouble(cfg, "LazyPlanner/partialReplanLeadTime", 0.0);
     }
-
-    Trajectory LazyPlanner::reuse(PlanRequest&& request) {
-        Trajectory& prevTrajectory = request.prevTrajectory;
-        if(prevTrajectory.empty()) {
-            Trajectory out{{request.start}};
-            out.setDebugText("Empty");
-            return std::move(out);
+    using namespace Geometry2d;
+    Trajectory LazyPlanner::checkBetter(PlanRequest&& request, RobotInstant goalInstant) {
+        PlanRequest requestCopy = request;
+        Trajectory newTrajectory = partialReplan(std::move(request), goalInstant);
+        if(newTrajectory.end_time() < requestCopy.prevTrajectory.end_time()) {
+            return std::move(newTrajectory);
         }
-        RJ::Seconds timeElapsed = RJ::now() - prevTrajectory.begin_time();
-        if(timeElapsed < prevTrajectory.duration()) {
-            prevTrajectory.trimFront(timeElapsed);
-            Trajectory out = std::move(prevTrajectory);
-            out.setDebugText("Reuse");
-            return std::move(out);
-        }
-        Trajectory out{{prevTrajectory.last()}};
-        out.setDebugText("Reusing Past End");
-        return std::move(out);
+        return reuse(std::move(requestCopy));
     }
 
     bool LazyPlanner::veeredOffPath(const PlanRequest& request) const {
@@ -58,31 +48,13 @@ namespace Planning {
      * replan, or reuse the previous path.
      * @tparam CommandType
      * @param request
-     * @return trajectory
+     * @return trajectory if one can be found, otherwise nullopt
      */
     Trajectory LazyPlanner::plan(PlanRequest &&request) {
-        using namespace Geometry2d;
-        //setup angle function and motion command
-        AngleFunction angleFn = getAngleFunction(request);
-
-        std::optional<double> angle_override =
-                request.context->robot_intents[request.shellID].angle_override;
-        if(angle_override) {
-            angleFn = AngleFns::faceAngle(*angle_override);
-        }
-
         const Trajectory& prevTrajectory = request.prevTrajectory;
 
-        // adjust the requested goal out of an obstacle if necessary
-        std::optional<Point> prevGoal;
-        if (!prevTrajectory.empty()) {
-            prevGoal = prevTrajectory.last().pose.position();
-        }
         RobotInstant goalInstant = getGoalInstant(request);
         Point& goalPoint = goalInstant.pose.position();
-        goalPoint = EscapeObstaclesPathPlanner::findNonBlockedGoal(goalPoint,
-                                                                   prevGoal,
-                                                                   request.static_obstacles);
         // Simple case: no path
         //todo(Ethan) maybe delete this handle it in RRTTrajectory() ?
         if (request.start.pose.position().distTo(goalPoint) < 1e-6) {
@@ -93,7 +65,7 @@ namespace Planning {
             return std::move(result);
         }
         if (prevTrajectory.empty() || veeredOffPath(request)) {
-            return fullReplan(std::move(request), goalInstant, angleFn);
+            return fullReplan(std::move(request), goalInstant);
         }
         RJ::Seconds timeIntoTrajectory =
                 std::clamp(RJ::Seconds{RJ::now() - prevTrajectory.begin_time()}, RJ::Seconds{0s}, prevTrajectory.duration());
@@ -109,10 +81,10 @@ namespace Planning {
             invalidTime = prevTrajectory.duration();
         }
         if (shouldPartialReplan) {
-            if (invalidTime - timeIntoTrajectory < partialReplanLeadTime() * 2) {
-                return fullReplan(std::move(request), goalInstant, angleFn);
+            if (invalidTime - timeIntoTrajectory < RJ::Seconds{*_partialReplanLeadTime} * 2) {
+                return fullReplan(std::move(request), goalInstant);
             }
-            return partialReplan(std::move(request), goalInstant, angleFn);
+            return partialReplan(std::move(request), goalInstant);
         }
         // make fine corrections when we are realy close to the target
         // because the old target might be a bit off
@@ -120,27 +92,41 @@ namespace Planning {
             std::optional<RobotInstant> nowInstant = prevTrajectory.evaluate(RJ::now());
             if (nowInstant) {
                 request.start = *nowInstant;
-                return fullReplan(std::move(request), goalInstant, angleFn);
+                return fullReplan(std::move(request), goalInstant);
             }
         }
-        if (RJ::now() - prevTimes[request.shellID] > 0.2s && timeRemaining > partialReplanLeadTime() * 2) {
-            return checkBetter(std::move(request), goalInstant, angleFn);
+        //todo(Ethan) fix this!!!!
+        if (RJ::now() - request.prevTrajectory.timeCreated() > 0.2s && timeRemaining > RJ::Seconds{*_partialReplanLeadTime} * 2) {
+            return checkBetter(PlanRequest{request}, goalInstant);
         }
         return reuse(std::move(request));
     }
-
-    AngleFunction LazyPlanner::getAngleFunction(const PlanRequest& request) const {
-        //todo(Ethan) this is probably the wrong angle function to use by default
-        return AngleFns::zero;
+    Trajectory LazyPlanner::reuse(PlanRequest&& request) {
+        Trajectory& prevTrajectory = request.prevTrajectory;
+        if(prevTrajectory.empty()) {
+            Trajectory out{{request.start}};
+            out.setDebugText("Empty");
+            return std::move(out);
+        }
+        RJ::Seconds timeElapsed = RJ::now() - prevTrajectory.begin_time();
+        //todo(Ethan) does this hurt performance???
+        if(timeElapsed < prevTrajectory.duration()) {
+            prevTrajectory.trimFront(timeElapsed);
+            Trajectory out = std::move(prevTrajectory);
+            out.setDebugText("Reuse");
+            return std::move(out);
+        }
+        Trajectory out{{prevTrajectory.last()}};
+        out.setDebugText("Reusing Past End");
+        return std::move(out);
     }
-
     bool LazyPlanner::goalChanged(const RobotInstant &prevGoal,
                                         const RobotInstant &goal) const {
         double goalPosDiff = (prevGoal.pose.position() -
                               goal.pose.position()).mag();
         double goalVelDiff = (prevGoal.velocity.linear() -
                               goal.velocity.linear()).mag();
-        return goalPosDiff > goalPosChangeThreshold()
-               || goalVelDiff > goalVelChangeThreshold();
+        return goalPosDiff > *_goalPosChangeThreshold
+               || goalVelDiff > *_goalVelChangeThreshold;
     }
 }

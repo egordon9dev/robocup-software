@@ -7,8 +7,8 @@
 namespace Planning {
 class Planner {
 public:
-    Planner() = default;
-    virtual ~Planner() = default; //todo(Ethan) add virtual destructors to all the planners
+    explicit Planner(std::string name): _name(name) {}
+    virtual ~Planner() = default;
 
     /**
      * Whether or not this command can be planned by this planner.
@@ -27,18 +27,23 @@ public:
      * @param request The request to plan.
      * @return A trajectory for the robot to follow.
      */
-    virtual Trajectory plan(PlanRequest&& request) = 0;//todo(Ethan) maybe return just a RobotInstant bc ROS
+    virtual Trajectory plan(PlanRequest&& request) = 0;
 
     /**
      * Get a user-readable name for this planner.
      */
-    virtual std::string name() const = 0;
+    std::string name() const {
+        return _name;
+    }
+
+private:
+    const std::string _name;
 };
 
 template<typename CommandType>
 class PlannerForCommandType : public Planner {
 public:
-    PlannerForCommandType() = default;
+    PlannerForCommandType(const std::string& name): Planner(name) {};
     ~PlannerForCommandType() override = default;
 
     bool isApplicable(const MotionCommand& command) const override {

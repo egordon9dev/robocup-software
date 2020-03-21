@@ -15,29 +15,26 @@ namespace Planning {
     using Geometry2d::Shape;
     using Geometry2d::Segment;
 
-    Trajectory::Trajectory(Trajectory&& other): instants_(std::move(other.instants_)), _debugText(std::move(other._debugText)) {
+    Trajectory::Trajectory(Trajectory&& other): instants_(std::move(other.instants_)), _debugText(std::move(other._debugText)), stamp(other.stamp) {
         other._debugText = std::nullopt;
+        other.stamp = RJ::Time{0s};
     }
 
     Trajectory &Trajectory::operator=(Trajectory &&other) {
         //move data into *this
         instants_ = std::move(other.instants_);
         _debugText = std::move(other._debugText);
+        stamp=other.stamp;
         //clear data in other
         other._debugText = std::nullopt;
-        return *this;
-    }
-
-    Trajectory &Trajectory::operator=(const Trajectory &other) {
-        instants_ = other.instants_;
-        _debugText = other._debugText;
+        other.stamp = RJ::Time{0s};
         return *this;
     }
 
     Trajectory::Trajectory(const Trajectory &a, const Trajectory &b):
     Trajectory(Trajectory{a}, Trajectory{b}) {}
 
-    Trajectory::Trajectory(Trajectory &&a, Trajectory &&b) {
+    Trajectory::Trajectory(Trajectory &&a, Trajectory &&b): stamp(b.stamp) {
         instants_ = std::move(a.instants_);
         if(!b.empty()) b.instants_.pop_front();
         instants_.splice(instants_.end(), std::move(b.instants_));

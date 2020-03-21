@@ -20,15 +20,14 @@ namespace Planning {
  */
 class EscapeObstaclesPathPlanner : public Planner {
 public:
-    EscapeObstaclesPathPlanner(){};
+    EscapeObstaclesPathPlanner(): Planner("EscapeObstaclesPathPlanner") {};
+    ~EscapeObstaclesPathPlanner() override = default;
 
     Trajectory plan(PlanRequest&& planRequest) override {
-        //lets do this the lazy way
         planRequest.motionCommand = PathTargetCommand{planRequest.start};
         return _planner.plan(std::move(planRequest));
     };
     bool isApplicable(const MotionCommand& command) const override {return true;}
-    std::string name() const override { return std::string("EscapeObstacles"); }
 
     /// Uses an RRT to find a point near to @pt that isn't blocked by obstacles.
     /// If @prevPt is give, only uses a newly-found point if it is closer to @pt
@@ -41,8 +40,6 @@ public:
     static void createConfiguration(Configuration* cfg);
 
     static float stepSize() { return *_stepSize; }
-
-    static float goalChangeThreshold() { return *_goalChangeThreshold; }
 
 private:
     PathTargetPlanner _planner;

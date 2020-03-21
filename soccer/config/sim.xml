@@ -365,6 +365,8 @@
   <goalVelChangeThreshold value="0.025"/>
  </PathTargetPlanner>
  <LineKickPlanner>
+  <bufferDistBeforeContact value="0.1"/>
+  <bufferDistAfterContact value="0.1"/>
   <goalPosChangeThreshold value="0.025"/>
   <goalVelChangeThreshold value="0.025"/>
  </LineKickPlanner>
@@ -376,7 +378,6 @@
   <maxApproachAngle value="0.3"/>
   <maxOutrunBallSpeed value="0.7"/>
   <ballContactAccelPercent value="0.2"/>
-  <touchDeltaSpeed value="0.1"/>
   <ballSpeedPercentForDampen value="0"/>
   <Collect>
    <bufferDistBeforeContact value="0.156"/>
@@ -384,6 +385,7 @@
    <ballSpeedApproachDirectionCutoff value="0.1"/>
    <goalPosChangeThreshold value="0.025"/>
    <goalVelChangeThreshold value="0.025"/>
+   <touchDeltaSpeed value="0.1"/>
   </Collect>
   <Settle>
    <bufferTimeBeforeContact value="0.0"/>

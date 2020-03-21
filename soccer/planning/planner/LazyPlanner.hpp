@@ -5,7 +5,7 @@
 #include <vector>
 
 namespace Planning {
-/**
+/**todo(Ethan) fix description
  * @brief abstract Planner that conducts re-planning.
  * it's lazy because it only makes a new plan when the old plan is invalid, but
  * occasionally it will check for a better path even if the old path is valid.
@@ -21,48 +21,28 @@ namespace Planning {
  */
 class LazyPlanner: public Planner {
 public:
-    LazyPlanner(): prevTimes(Num_Shells, RJ::now()-60s) {};
+    LazyPlanner(std::string name,
+                ConfigDouble* const& goalPosChange,
+                ConfigDouble* const& goalVelChange,
+                ConfigDouble* const& partialReplanLeadTime = defaultPartialReplanLeadTime):
+            Planner(name),
+            _goalPosChangeThreshold(goalPosChange),
+            _goalVelChangeThreshold(goalVelChange),
+            _partialReplanLeadTime(partialReplanLeadTime){}
     virtual ~LazyPlanner() = default;
 
     Trajectory plan(PlanRequest&& request) override;
 
-    std::string name() const override { return "LazyPlanner"; }
     static void createConfiguration(Configuration* cfg);
 
-    /**
-     * Specifies the duration of the previous path used during partial replan
-     * @return duration
-     */
-    virtual RJ::Seconds partialReplanLeadTime() const {
-        return RJ::Seconds{*_partialReplanLeadTime};
-    }
-
-    /**
-     * maximum distance between goals before replan
-     * @return distance
-     */
-    virtual double goalPosChangeThreshold() const = 0;
-    /**
-     * maximum velocity change before replan
-     * @return velocity change
-     */
-    virtual double goalVelChangeThreshold() const = 0;
-
 protected:
-    /**
-     * get the angle function used to plan angles
-     * @param request
-     * @return angle function
-     */
-    virtual AngleFunction getAngleFunction(const PlanRequest& request) const;
-
     /**
      * create a new trajectory and discard the previous trajectory
      * @param request
      * @param angleFunction
      * @return trajectory
      */
-    virtual Trajectory fullReplan(PlanRequest&& request, RobotInstant goalInstant, AngleFunction angleFunction) = 0;
+    virtual Trajectory fullReplan(PlanRequest&& request, RobotInstant goalInstant) = 0;
 
     /**
      * use a small piece of the previous trajectory replan from that point forward
@@ -70,22 +50,15 @@ protected:
      * @param angleFunction
      * @return trajectory
      */
-    virtual Trajectory partialReplan(PlanRequest&& request, RobotInstant goalInstant, AngleFunction angleFunction) = 0;
+    virtual Trajectory partialReplan(PlanRequest&& request, RobotInstant goalInstant) = 0;
 
     /**
      * check for a better path even if the current path is valid.
      * @param request
      * @param angleFunction
-     * @return better trajectory if one is found. otherwise previous trajectory
+     * @return better trajectory if one is found; otherwise reuse old path
      */
-    virtual Trajectory checkBetter(PlanRequest&& request, RobotInstant goalInstant, AngleFunction angleFunction) = 0;
-
-    /**
-     * reuse the previous trajectory
-     * @param request
-     * @return trajectory
-     */
-    virtual Trajectory reuse(PlanRequest&& request);
+    virtual Trajectory checkBetter(PlanRequest&& request, RobotInstant goalInstant);
 
     /**
      * check if the goal changed enough to cause a replan
@@ -104,23 +77,23 @@ protected:
 
     virtual Trajectory partialPath(const Trajectory& prevTrajectory) const {
         //todo(Ethan) cut out old parts of the path?
-        return prevTrajectory.subTrajectory(0s, (RJ::now() - prevTrajectory.begin_time()) + partialReplanLeadTime());
+        return prevTrajectory.subTrajectory(0s, (RJ::now() - prevTrajectory.begin_time()) + RJ::Seconds{*_partialReplanLeadTime});
     }
 
-    void updatePrevTime(unsigned int shell) {
-        assert(shell >= 0 && shell < Num_Shells);
-        prevTimes[shell] = RJ::now();
-    }
-    RJ::Time getPrevTime(unsigned int shell) const {
-        assert(shell >= 0 && shell < Num_Shells);
-        return prevTimes[shell];
-    }
+    /**
+     * reuse the previous trajectory
+     * @param request
+     * @return trajectory
+     */
+    virtual Trajectory reuse(PlanRequest&& request);
 
     virtual bool veeredOffPath(const PlanRequest& request) const;
 
 private:
-    static ConfigDouble* _partialReplanLeadTime;
-    std::vector<RJ::Time> prevTimes;
+    static ConfigDouble* defaultPartialReplanLeadTime;
+    ConfigDouble* const& _partialReplanLeadTime;
+    ConfigDouble* const& _goalPosChangeThreshold;
+    ConfigDouble* const& _goalVelChangeThreshold;
 };
 
 }

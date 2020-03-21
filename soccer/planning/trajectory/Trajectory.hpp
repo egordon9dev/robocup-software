@@ -54,7 +54,7 @@ public:
      * Create a trajectory from several "instants", each with a pose, velocity,
      * and timestamp.
      */
-    explicit Trajectory(std::list<RobotInstant> &&instants) : instants_(std::move(instants)) {}
+    explicit Trajectory(std::list<RobotInstant> &&instants) : instants_(std::move(instants)), stamp(RJ::now()) {}
 
     /**
      * Create a trajectory from two other trajectories
@@ -75,7 +75,7 @@ public:
     Trajectory(Trajectory&& other);
     Trajectory(const Trajectory& other) = default;
     Trajectory& operator=(Trajectory&& other);
-    Trajectory& operator=(const Trajectory& other);
+    Trajectory& operator=(const Trajectory& other) = default;
 
     /**
      * Append a RobotInstant. instant.stamp must be greater than end()
@@ -284,9 +284,18 @@ public:
     void setDebugText(QString str) {_debugText = std::move(str); };
     QString getDebugText() const { return _debugText ? *_debugText: ""; }
 
+    /**
+     * get the time this trajectory was created
+     * @return time stamp
+     */
+    RJ::Time timeCreated() {
+        return stamp;
+    }
 private:
     // A sorted array of RobotInstants (by timestamp)
     std::list<RobotInstant> instants_;
+    // time this trajectory was created
+    RJ::Time stamp;
 
     std::optional<QString> _debugText;
 };

@@ -101,13 +101,23 @@ public:
      *
      * @param[in]	shape The obstacles on the field
      * @param[out]  hitTime the approximate time when the path hits an obstacle.
-     * If no obstacles are hit, behavior is undefined for the final value.
+     * If no obstacles are hit, this value is not modified
      * @param[in] 	startTimeIntoPath The time on the path to start checking
      *from
      * @return 		true if it hits an obstacle, otherwise false
      */
     bool hit(const Geometry2d::ShapeSet& obstacles, RJ::Seconds startTimeIntoPath, RJ::Seconds* hitTime = nullptr) const;
 
+    /**
+     * determine if this path intersects any of the dynamic obstacles
+     * @param obstacles[in[
+     * @param startTime[in]
+     * @param hitLocation[out] the approximate location where the path hits an
+     * obstacle. if no obstacles are hit, this value is not modified
+     * @param hitTime[out] the approximate time when the path hits an obstacle.
+     * If no obstacles are hit, this value is not modified
+     * @return true if it intersects an obstacles, otherwise false
+     */
     bool intersects(const std::vector<DynamicObstacle>& obstacles,
                     RJ::Time startTime,
                     Geometry2d::Point* hitLocation = nullptr,

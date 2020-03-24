@@ -177,17 +177,17 @@ TEST(Trajectory, Efficiency) {
 
 
     t0 = RJ::now();
-    RRTTrajectory(RobotInstant{{{0,0},0}, {}, RJ::now()},
-                  RobotInstant{{{1,1},0},{},RJ::now()},
-                  mot, obs);
-    printf("time for RRTTrajectory direct: %.6f\n", RJ::Seconds(RJ::now()-t0).count());
+    CreatePath::rrt(RobotInstant{{{0, 0}, 0}, {}, RJ::now()},
+                    RobotInstant{{{1,1},0},{},RJ::now()},
+                    mot, obs);
+    printf("time for PathGen::rrt direct: %.6f\n", RJ::Seconds(RJ::now()-t0).count());
 
     t0 = RJ::now();
     obs.add(std::make_shared<Circle>(Point{.5,.5}, 0.2));
-    RRTTrajectory(RobotInstant{{{0,0},0}, {}, RJ::now()},
-            RobotInstant{{{1,1},0},{},RJ::now()},
-            mot, obs);
-    printf("time for RRTTrajectory obstructed: %.6f\n", RJ::Seconds(RJ::now()-t0).count());
+    CreatePath::rrt(RobotInstant{{{0, 0}, 0}, {}, RJ::now()},
+                    RobotInstant{{{1,1},0},{},RJ::now()},
+                    mot, obs);
+    printf("time for PathGen::rrt obstructed: %.6f\n", RJ::Seconds(RJ::now()-t0).count());
 }
 
 TEST(RRT, Time) {
@@ -211,9 +211,9 @@ TEST(RRT, Time) {
     printf("RRTTime: %.6f\n", RJ::Seconds(RJ::now() - t0).count());
 }
 
-TEST(Trajectory, RRTTrajectorySmall) {
+TEST(Trajectory, CreatePath::rrtSmall) {
     RobotInstant start{Pose{{}, .1}, Twist{}, RJ::now()};
-    Trajectory a = RRTTrajectory(start, start, MotionConstraints{}, {});
+    Trajectory a = CreatePath::rrt(start, start, MotionConstraints{}, {});
     ASSERT_FALSE(a.empty());
     ASSERT_TRUE(a.num_instants() == 1);
     ASSERT_NEAR(a.duration().count(), 0.0, 1e-6);
@@ -244,12 +244,12 @@ TEST(Trajectory, CombiningTrajectories_and_SubTrajectories) {
     };
 
     /*
-     * Test RRTTrajectory(), combo trajectory
+     * Test PathGen::rrt(), combo trajectory
      */
-    Trajectory preTraj = RRTTrajectory(start, mid, constraints.mot, obs);
+    Trajectory preTraj = CreatePath::rrt(start, mid, constraints.mot, obs);
     PlanAngles(preTraj, start, angleFn, constraints.rot);
     assertPathContinuous(preTraj, constraints);
-    Trajectory postTraj = RRTTrajectory(preTraj.last(), end, constraints.mot, obs);
+    Trajectory postTraj = CreatePath::rrt(preTraj.last(), end, constraints.mot, obs);
     PlanAngles(postTraj, preTraj.last(), angleFn, constraints.rot);
     assertPathContinuous(postTraj, constraints);
     Trajectory combo{preTraj, postTraj};
@@ -260,15 +260,15 @@ TEST(Trajectory, CombiningTrajectories_and_SubTrajectories) {
      */
     Trajectory partialPre = combo.subTrajectory(0s, 1.5s);
     assertPathContinuous(partialPre, constraints);
-    Trajectory partialPost = RRTTrajectory(partialPre.last(), end, constraints.mot,
-                                           obs);
+    Trajectory partialPost = CreatePath::rrt(partialPre.last(), end, constraints.mot,
+                                             obs);
     PlanAngles(partialPost, partialPre.last(), angleFn, constraints.rot);
     assertPathContinuous(partialPost, constraints);
     Trajectory combo2{partialPre, partialPost};
     assertPathContinuous(combo2, constraints);
 }
 
-TEST(Trajectory, RRTTrajectorySuccessRate) {
+TEST(Trajectory, CreatePath::rrtSuccessRate) {
     int fails = 0;
     constexpr int iterations = 1000;
     constexpr int numTries = 300;
@@ -291,7 +291,7 @@ TEST(Trajectory, RRTTrajectorySuccessRate) {
                                                                                                          .5)}, 0}, RJ::now()};
         Trajectory path{{}};
         for (int j = 0; j < numTries && path.empty(); j++){
-            path = RRTTrajectory(start, goal, MotionConstraints{}, obstacles);
+            path = CreatePath::rrt(start, goal, MotionConstraints{}, obstacles);
             if(path.empty()) {
                 fails++;
             }
@@ -300,13 +300,13 @@ TEST(Trajectory, RRTTrajectorySuccessRate) {
         assertPathContinuous(path, RobotConstraints{});
     }
     double successRate = (double)(iterations) / (iterations + fails);
-    printf("RRTTrajectory() Success Rate: %.6f\n", successRate);
+    printf("PathGen::rrt() Success Rate: %.6f\n", successRate);
 }
 
 TEST(Trajectory, AngleProfileNoExtraInstants) {
     RobotInstant start{Pose{{}, 0}, {}, RJ::now()};
     RobotInstant goal{Pose{{3,0}, 0}, {}, RJ::now()};
-    Trajectory path = RRTTrajectory(start, goal, MotionConstraints{}, {}, {});
+    Trajectory path = CreatePath::rrt(start, goal, MotionConstraints{}, {}, {});
     RotationConstraints rot;
     double maxDeltaAngle = rot.maxAccel * std::pow(path.duration().count() / 2.0, 2);
     PlanAngles(path, start, AngleFns::faceAngle(maxDeltaAngle * 0.5), rot);
@@ -317,7 +317,7 @@ void assertPivotEndpoints(double a0, double af, double w0) {
     RobotConstraints constraints;
     RobotInstant start{Pose{{}, a0}, Twist{{}, w0}, RJ::now()};
     RobotInstant goal{Pose{{}, af}, Twist{{}, 0}, RJ::now()};
-    Trajectory out = RRTTrajectory(start, goal, constraints.mot, {});
+    Trajectory out = CreatePath::rrt(start, goal, constraints.mot, {});
     ASSERT_FALSE(out.empty());
     PlanAngles(out, start, AngleFns::faceAngle(af), constraints.rot);
     // check first instant
@@ -338,7 +338,7 @@ void assertPivot(double a0, double af, double w0) {
     RobotConstraints constraints;
     RobotInstant start{Pose{{}, a0}, Twist{{}, w0}, RJ::now()};
     RobotInstant goal{Pose{{}, af}, Twist{{}, 0}, RJ::now()};
-    Trajectory out = RRTTrajectory(start, goal, constraints.mot, {});
+    Trajectory out = CreatePath::rrt(start, goal, constraints.mot, {});
     ASSERT_FALSE(out.empty());
     PlanAngles(out, start, AngleFns::faceAngle(af), constraints.rot);
     // check first instant

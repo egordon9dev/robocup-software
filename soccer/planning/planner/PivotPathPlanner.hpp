@@ -3,7 +3,6 @@
 #include "Planner.hpp"
 
 namespace Planning {
-    
 class PivotPathPlanner: public PlannerForCommandType<PivotCommand> {
 public:
     PivotPathPlanner(): PlannerForCommandType<PivotCommand>("PivotPathPlanner") {}

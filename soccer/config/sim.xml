@@ -357,18 +357,15 @@
    <min value="1"/>
   </Health>
  </VisionFilter>
- <LazyPlanner>
-  <partialReplanLeadTime value="0.2"/>
- </LazyPlanner>
  <PathTargetPlanner>
   <goalPosChangeThreshold value="0.025"/>
   <goalVelChangeThreshold value="0.025"/>
+  <partialReplanLeadTime value="0.1"/>
  </PathTargetPlanner>
  <LineKickPlanner>
   <bufferDistBeforeContact value="0.1"/>
   <bufferDistAfterContact value="0.1"/>
-  <goalPosChangeThreshold value="0.025"/>
-  <goalVelChangeThreshold value="0.025"/>
+  <approachSpeed value="0.1"/>
  </LineKickPlanner>
  <Capture>
   <searchStartDist value="0"/>
@@ -380,18 +377,22 @@
   <ballContactAccelPercent value="0.2"/>
   <ballSpeedPercentForDampen value="0"/>
   <Collect>
-   <bufferDistBeforeContact value="0.156"/>
-   <bufferDistAfterContact value="0.0"/>
+   <bufferDistBeforeContact value="0.08"/>
+   <bufferDistAfterContact value="0.08"/>
+   <targetChangeThreshold value="0.025"/>
    <ballSpeedApproachDirectionCutoff value="0.1"/>
-   <goalPosChangeThreshold value="0.025"/>
-   <goalVelChangeThreshold value="0.025"/>
-   <touchDeltaSpeed value="0.1"/>
+   <touchDeltaSpeed value="0.15"/>
+   <controlAccelScalePercent value="0.8"/>
+   <distCutoffToControl value="0.0285"/>
   </Collect>
   <Settle>
    <bufferTimeBeforeContact value="0.0"/>
-   <targetSensitivity value="0.00002"/>
-   <goalPosChangeThreshold value="0.09"/>
-   <goalVelChangeThreshold value="0.025"/>
+   <targetPointGain value="0.5"/>
+   <searchStartDist value="0"/>
+   <searchEndDist value="7"/>
+   <searchIncDist value="0.2"/>
+   <targetChangeThreshold value="0.08"/>
+   <shortcutDist value="0.09"/>
   </Settle>
  </Capture>
 </config>

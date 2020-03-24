@@ -13,7 +13,6 @@
 #include <stdexcept>
 #include <utility>
 #include "DebugDrawer.hpp"
-#include "planning/planner/CapturePlanner.hpp"
 
 using namespace std;
 using namespace Geometry2d;

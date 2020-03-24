@@ -30,6 +30,11 @@ public:
     virtual Trajectory plan(PlanRequest&& request) = 0;
 
     /**
+     * reuse previous path
+     */
+    static Trajectory reuse(PlanRequest&& request);
+
+    /**
      * Get a user-readable name for this planner.
      */
     std::string name() const {

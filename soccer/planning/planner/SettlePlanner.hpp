@@ -1,56 +1,51 @@
 #pragma once
-#include "CapturePlanner.hpp"
+#include "Planner.hpp"
+#include "PathTargetPlanner.hpp"
 namespace Planning {
-class SettlePlanner: public CapturePlanner {
+class SettlePlanner: public PlannerForCommandType<SettleCommand> {
 public:
-    SettlePlanner(): CapturePlanner("LineKickPlanner", _goalPosChangeThreshold,
-      _goalVelChangeThreshold),_avgTargetBallPoints(Num_Shells, std::nullopt) {}
+    SettlePlanner(): PlannerForCommandType<SettleCommand>("SettleCommand"),
+            _avgTargetBallPoints(Num_Shells, std::nullopt) {}
     ~SettlePlanner() override = default;
 
     static void createConfiguration(Configuration* cfg);
 
-    bool isApplicable(const MotionCommand& command) const override {
-        return std::holds_alternative<SettleCommand>(command);
-    }
-
-    bool veeredOffPath(const PlanRequest& req) const override { return false; }
-
-    Trajectory fullReplan(PlanRequest&& req, RobotInstant goalInstant) override {
-        const Trajectory& prevTraj = req.prevTrajectory;
-        if(!prevTraj.empty()) {
-            RJ::Time startT = req.start.stamp;
-            std::optional<RobotInstant> optStart = prevTraj.evaluate(startT);
-            if(optStart) {
-                req.start = *optStart;
-            }
-        }
-        return CapturePlanner::fullReplan(std::move(req), goalInstant);
-    }
-
-protected:
-    std::optional<std::tuple<Trajectory, Geometry2d::Pose, bool>> attemptCapture(const PlanRequest& request, RJ::Time contactTime) const override;
-    RobotInstant getGoalInstant(const PlanRequest& request) override;
+    Trajectory plan(PlanRequest&& request);
 
 private:
-    static ConfigDouble* _goalPosChangeThreshold;
-    static ConfigDouble* _goalVelChangeThreshold;
+    RJ::Time bruteForceIntercept(const PlanRequest& request);
+    Geometry2d::Pose findTargetPose(const PlanRequest& request);
+    Trajectory intercept(PlanRequest&& request, RJ::Time interceptTime);
+
+    template <typename T>
+    T applyLowPassFilter(const T& oldValue, const T& newValue, double gain);
 
     // duration of the buffer before contacting the ball where the robot will
     // move at a constant velocity
     static ConfigDouble* _bufferTimeBeforeContact;
 
-    // percent of the ball vel we match during dampen (when we catch a ball
-    // moving fast toward us)
-    static ConfigDouble* _ballSpeedPercentForDampen; // %
+    // Gain on the averaging function to smooth the target point to intercept
+    // This is due to the high flucations in the ball velocity frame to frame
+    // a*newPoint + (1-a)*oldPoint
+    // The lower the number, the less noise affects the system, but the slower
+    // it responds to changes The higher the number, the more noise affects the
+    // system, but the faster it responds to changes
+    static ConfigDouble* _targetPointGain;
 
-    // Gain on the averaging function to smooth the ball velocity to for any
-    // motion commands This is due to the high flucations in the ball velocity
-    // frame to frame a*newPoint + (1-a)*oldPoint The lower the number, the less
-    // noise affects the system, but the slower it responds to changes The
-    // higher the number, the more noise affects the system, but the faster it
-    // responds to changes
-    static ConfigDouble* _targetSensitivity;
+    // Closest dist to start searching for intercept points
+    static ConfigDouble* _searchStartDist;  // m
+    // Furthest dist to search for intercept points
+    static ConfigDouble* _searchEndDist;  // m
+    // What dist increment to search for intercepts
+    static ConfigDouble* _searchIncDist;  // m
+
+    static ConfigDouble* _targetChangeThreshold;
+
+    static ConfigDouble* _shortcutDist;
 
     std::vector<std::optional<Geometry2d::Point>> _avgTargetBallPoints;
+    std::array<std::optional<Geometry2d::Point>, Num_Shells> _targetBallPoints;
+
+    PathTargetPlanner _pathTargetPlanner;
 };
 }

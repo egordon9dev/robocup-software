@@ -5,6 +5,7 @@ ConfigDouble* LineKickPlanner::_goalPosChangeThreshold;
 ConfigDouble* LineKickPlanner::_goalVelChangeThreshold;
 ConfigDouble* LineKickPlanner::_bufferDistBeforeContact;
 ConfigDouble* LineKickPlanner::_bufferDistAfterContact;
+ConfigDouble* LineKickPlanner::_approachSpeed;
 
 REGISTER_CONFIGURABLE(LineKickPlanner);
 
@@ -17,6 +18,7 @@ void LineKickPlanner::createConfiguration(Configuration* cfg) {
             "LineKickPlanner/bufferDistBeforeContact");
     _bufferDistAfterContact = new ConfigDouble(cfg,
             "LineKickPlanner/bufferDistAfterContact");
+    _approachSpeed = new ConfigDouble(cfg, "LineKickPlanner/approachSpeed");
 }
 
 using namespace Geometry2d;
@@ -40,7 +42,7 @@ std::optional<std::tuple<Trajectory, Pose, bool>> LineKickPlanner::attemptCaptur
 
     auto lineKickCommand = std::get<LineKickCommand>(request.motionCommand);
     targetFacePoint = lineKickCommand.target;
-    contactSpeed = lineKickApproachSpeed;
+    contactSpeed = *_approachSpeed;
 
     Point contactFaceDir;
     if(targetFacePoint.distTo(futureBallPoint) < 1e-9) {
@@ -70,7 +72,7 @@ std::optional<std::tuple<Trajectory, Pose, bool>> LineKickPlanner::attemptCaptur
     RJ::Time contactBallTime = RJ::Time::max();
     //if we aren't in the fine segment
     if(ball.pos.distTo(startInstant.pose.position()) > *_bufferDistBeforeContact + Robot_Radius + Ball_Radius) {
-        coursePath = RRTTrajectory(startInstant, courseTargetInstant, constraints.mot, static_obstacles, dynamic_obstacles);
+        coursePath = CreatePath::rrt(startInstant, courseTargetInstant, constraints.mot, static_obstacles, dynamic_obstacles);
         if(coursePath->empty()) {
             printf("attemptCapture: Course RRT Failed\n");
             return std::nullopt;
@@ -94,7 +96,7 @@ std::optional<std::tuple<Trajectory, Pose, bool>> LineKickPlanner::attemptCaptur
     bool isBeforeContact = coursePath || botToContact.mag() > Robot_MouthRadius + Ball_Radius;
     if(isBeforeContact) {
         RobotInstant instantBeforeFine = coursePath ? courseTargetInstant : startInstant;
-        finePathBeforeContact = RRTTrajectory(instantBeforeFine, contactInstant, fineConstraints.mot, static_obstacles, dynamic_obstacles);
+        finePathBeforeContact = CreatePath::rrt(instantBeforeFine, contactInstant, fineConstraints.mot, static_obstacles, dynamic_obstacles);
         if(finePathBeforeContact->empty()) {
             if(coursePath) {
                 Trajectory out = std::move(*coursePath);
@@ -114,7 +116,7 @@ std::optional<std::tuple<Trajectory, Pose, bool>> LineKickPlanner::attemptCaptur
         double stoppingDist = std::pow(contactSpeed, 2) / (2 * fineConstraints.mot.maxAcceleration);
         Point fineTargetPoint = contactPoint + contactDir.normalized(*_bufferDistAfterContact + stoppingDist);
         RobotInstant fineTargetInstant{Pose{fineTargetPoint, 0}, {}, RJ::Time(0s)};
-        finePathAfterContact = RRTTrajectory(contactInstant, fineTargetInstant, fineConstraints.mot, static_obstacles, dynamic_obstacles);
+        finePathAfterContact = CreatePath::rrt(contactInstant, fineTargetInstant, fineConstraints.mot, static_obstacles, dynamic_obstacles);
         if(finePathAfterContact->empty()) {
             if(coursePath && finePathBeforeContact) {
                 Trajectory out{std::move(*coursePath), std::move(*finePathBeforeContact)};

@@ -26,6 +26,7 @@ struct EmptyCommand {};
 /**
  * Move to a particular target with a particular velocity, avoiding obstacles.
  */
+ //todo(Ethan) use a MotionInstant instead?
 struct PathTargetCommand {
     RobotInstant pathGoal;
 };

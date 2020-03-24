@@ -47,18 +47,24 @@ std::vector<Geometry2d::Point> GenerateRRT(
         const Geometry2d::ShapeSet& obstacles,
         const std::vector<Geometry2d::Point>& waypoints = {});
 
+namespace CreatePath {
 /**
- * Generate a smooth profiled velocity path. The user still
- * needs to plan angles with PlanAngles() as this function ignores angles
- * @param start initial instant
- * @param goal desired instant
- * @param motionConstraints motion constraints
- * @param static_obstacles stationary obstacles
- * @param dynamic_obstacles dynamic obstacles
- * @return path without angles
+ * Generate a smooth path from start to goal avoiding obstacles.
  */
-Trajectory RRTTrajectory(const RobotInstant& start, const RobotInstant& goal, const MotionConstraints& motionConstraints, const Geometry2d::ShapeSet& static_obstacles, const std::vector<DynamicObstacle>& dynamic_obstacles = {},const std::vector<Geometry2d::Point>& biasWaypoints = {});
+Trajectory rrt(const RobotInstant& start, const RobotInstant& goal, const MotionConstraints& motionConstraints, const Geometry2d::ShapeSet& static_obstacles, const std::vector<DynamicObstacle>& dynamic_obstacles = {},const std::vector<Geometry2d::Point>& biasWaypoints = {});
 
+/**
+ * Generate a smooth path from start to goal disregarding obstacles.
+ */
+Trajectory simple(const RobotInstant& start, const RobotInstant& goal,
+        const MotionConstraints& motionConstraints);
+
+/**
+ * Generate a path by RRT. if that fails, fall back on the simple path
+ */
+Trajectory complete(const RobotInstant& start, const RobotInstant& goal, const MotionConstraints& motionConstraints, const Geometry2d::ShapeSet& static_obstacles, const std::vector<DynamicObstacle>& dynamic_obstacles = {},const std::vector<Geometry2d::Point>& biasWaypoints = {});
+
+}
 /**
  * project a point into the field rect
  */

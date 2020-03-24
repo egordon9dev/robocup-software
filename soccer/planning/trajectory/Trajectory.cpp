@@ -180,7 +180,7 @@ namespace Planning {
         }
         return false;
     }
-
+    //todo(Ethan) delete hitLocation. i think it doesn't work for static hits
     bool Trajectory::intersects(const std::vector<DynamicObstacle> &obstacles,
                                 RJ::Time startTime,
                                 Geometry2d::Point *hitLocation,
@@ -193,7 +193,11 @@ namespace Planning {
             if (obs.path->empty()) {
                 Geometry2d::ShapeSet set;
                 set.add(obs.circle);
-                if (hit(set, startTime - begin_time(), hitTime)) {
+                RJ::Seconds staticHit; //temporary to prevent side effects
+                if (hit(set, startTime - begin_time(), &staticHit)) {
+                    if(hitTime) {
+                        *hitTime = staticHit;
+                    }
                     return true;
                 }
             } else {

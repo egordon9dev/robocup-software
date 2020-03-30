@@ -13,7 +13,7 @@ PlannerNode::PlannerNode(Context* context) : context_(context), plannerIdx(Num_S
     planners_.push_back(std::make_unique<PathTargetPlanner>());
     planners_.push_back(std::make_unique<SettlePlanner>());
     planners_.push_back(std::make_unique<CollectPlanner>());
-//    planners_.push_back(std::make_unique<LineKickPlanner>()); todo(Ethan) uncomment
+    planners_.push_back(std::make_unique<LineKickPlanner>());
     planners_.push_back(std::make_unique<PivotPathPlanner>());
 
     // The empty planner should always be last.

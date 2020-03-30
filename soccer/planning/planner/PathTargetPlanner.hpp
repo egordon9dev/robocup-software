@@ -16,6 +16,9 @@ public:
     double drawRadius;
     QColor drawColor;
     QString drawLayer;
+
+    static double goalPosChangeThreshold() { return *_goalPosChangeThreshold; }
+    static double partialReplanLeadTime() { return *_partialReplanLeadTime; }
 private:
     Trajectory checkBetter(PlanRequest&& request, RobotInstant goalInstant);
     Trajectory partialReplan(PlanRequest&& request, RobotInstant goalInstant);

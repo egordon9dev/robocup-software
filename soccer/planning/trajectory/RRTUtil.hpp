@@ -57,7 +57,7 @@ Trajectory rrt(const RobotInstant& start, const RobotInstant& goal, const Motion
  * Generate a smooth path from start to goal disregarding obstacles.
  */
 Trajectory simple(const RobotInstant& start, const RobotInstant& goal,
-        const MotionConstraints& motionConstraints);
+        const MotionConstraints& motionConstraints, const std::vector<Geometry2d::Point>& intermediatePoints = {});
 
 /**
  * Generate a path by RRT. if that fails, fall back on the simple path

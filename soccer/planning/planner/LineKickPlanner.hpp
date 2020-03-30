@@ -1,27 +1,22 @@
 #pragma once
-//
-//namespace Planning{
-//class LineKickPlanner: public CapturePlanner {
-//public:
-//    LineKickPlanner(): CapturePlanner("LineKickPlanner", _goalPosChangeThreshold,
-//                                      _goalVelChangeThreshold) {}
-//    ~LineKickPlanner() override = default;
-//
-//    static void createConfiguration(Configuration* cfg);
-//
-//    bool isApplicable(const MotionCommand& command) const override {
-//        return std::holds_alternative<LineKickCommand>(command);
-//    }
-//
-//protected:
-//    std::optional<std::tuple<Trajectory, Geometry2d::Pose, bool>> attemptCapture(const PlanRequest& request, RJ::Time contactTime) const override;
-//
-//private:
-//    // buffer distance for when we contact the ball. between these buffers, the
-//    // robot will move at a constant velocity
-//    static ConfigDouble* _bufferDistBeforeContact;
-//    static ConfigDouble* _bufferDistAfterContact;
-//
-//    static ConfigDouble* _approachSpeed;
-//};
-//}
+#include "Planner.hpp"
+#include "PathTargetPlanner.hpp"
+namespace Planning{
+class LineKickPlanner: public PlannerForCommandType<LineKickCommand> {
+public:
+    LineKickPlanner(): PlannerForCommandType<LineKickCommand>("LineKickPlanner") {}
+    ~LineKickPlanner() override = default;
+    Trajectory plan(PlanRequest&& request) override;
+    static void createConfiguration(Configuration* cfg);
+private:
+    std::optional<Trajectory> attemptBruteForce(const PlanRequest& request);
+    Trajectory planForSlowMovingBall(PlanRequest&& request);
+
+    static ConfigDouble* _approachSpeed;
+
+    PathTargetPlanner _pathTargetPlanner;
+    bool _finalApproach = false;
+    std::optional<Geometry2d::Point> _targetKickPos;
+    int _reusePathCount = 0;
+};
+}

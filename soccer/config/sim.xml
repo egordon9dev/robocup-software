@@ -363,9 +363,7 @@
   <partialReplanLeadTime value="0.1"/>
  </PathTargetPlanner>
  <LineKickPlanner>
-  <bufferDistBeforeContact value="0.1"/>
-  <bufferDistAfterContact value="0.1"/>
-  <approachSpeed value="0.1"/>
+  <approachSpeed value="0.25"/>
  </LineKickPlanner>
  <Capture>
   <searchStartDist value="0"/>

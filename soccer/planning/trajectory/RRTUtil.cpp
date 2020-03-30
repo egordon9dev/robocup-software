@@ -129,11 +129,13 @@ vector<Point> GenerateRRT(
 
 namespace CreatePath {
 Trajectory simple(const RobotInstant& start, const RobotInstant& goal,
-        const MotionConstraints& motionConstraints) {
-    BezierPath bezier({start.pose.position(), goal.pose.position()},
-                              start.velocity.linear(),
-                              goal.velocity.linear(),
-                              motionConstraints);
+        const MotionConstraints& motionConstraints, const std::vector<Point>& intermediatePoints) {
+    std::vector<Point> points;
+    points.push_back(start.pose.position());
+    for(const Point& pt : intermediatePoints) points.push_back(pt);
+    points.push_back(goal.pose.position());
+    BezierPath bezier(points, start.velocity.linear(), goal.velocity.linear(),
+            motionConstraints);
     Trajectory path = ProfileVelocity(bezier,
                                       start.velocity.linear().mag(),
                                       goal.velocity.linear().mag(),

@@ -56,4 +56,9 @@ public:
     }
 };
 
+template <typename T>
+inline T applyLowPassFilter(const T& oldValue, const T& newValue,
+                     double gain) {
+    return gain * newValue + (1 - gain) * oldValue;
+}
 }

@@ -17,9 +17,6 @@ private:
     Geometry2d::Pose findTargetPose(const PlanRequest& request);
     Trajectory intercept(PlanRequest&& request, RJ::Time interceptTime);
 
-    template <typename T>
-    T applyLowPassFilter(const T& oldValue, const T& newValue, double gain);
-
     // duration of the buffer before contacting the ball where the robot will
     // move at a constant velocity
     static ConfigDouble* _bufferTimeBeforeContact;

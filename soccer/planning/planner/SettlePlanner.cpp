@@ -161,9 +161,4 @@ Pose SettlePlanner::findTargetPose(const PlanRequest& request) {
     }
     return Pose{*targetBallPoint + ball.vel.normalized(Ball_Radius+Robot_MouthRadius), ball.vel.angle() + M_PI};
 }
-template <typename T>
-T SettlePlanner::applyLowPassFilter(const T& oldValue, const T& newValue,
-                                        double gain) {
-    return gain * newValue + (1 - gain) * oldValue;
-}
 }

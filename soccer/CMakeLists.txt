@@ -43,6 +43,7 @@ set(ROBOCUP_LIB_SRC
     "planning/planner/CollectPlanner.cpp"
     "planning/planner/SettlePlanner.cpp"
     "planning/planner/EscapeObstaclesPathPlanner.cpp"
+    "planning/planner/InterceptPlanner.cpp"
     "Processor.cpp"
     "radio/NetworkRadio.cpp"
     "radio/PacketConvert.cpp"

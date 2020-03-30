@@ -73,7 +73,7 @@ RJ::Time SettlePlanner::bruteForceIntercept(const PlanRequest& request) {
             }
         }
     }
-    printf("brute force to %.1f took %.3f sec\n", endDist, RJ::Seconds(RJ::now()-startTime).count());//todo(Ethan) delete
+    printf("Settle brute force to %.1f took %.3f sec\n", endDist, RJ::Seconds(RJ::now()-startTime).count());//todo(Ethan) delete
     return interceptTime;
 }
 Trajectory SettlePlanner::intercept(PlanRequest&& request, RJ::Time interceptTime) {
